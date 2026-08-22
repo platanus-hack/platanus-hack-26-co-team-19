@@ -1,8 +1,8 @@
 export const siteCopy = {
-	brand: "deley.pe",
+	brand: "deley.com",
 	kicker: "Información jurídica observable",
 	headline: "Métricas de abogados a partir de casos reales",
-	lead: "El desempeño se ve en el historial de casos, no en la reputación informal. deley.pe resume volumen, resultados y tiempos para estudios, coordinadores y personas que necesitan elegir con datos.",
+	lead: "El desempeño se ve en el historial de casos, no en la reputación informal. deley.com resume volumen, resultados y tiempos para estudios, coordinadores y personas que necesitan elegir con datos.",
 	privacyTitle: "Privacidad de despacho",
 	privacy:
 		"Lo público y lo confidencial no se mezclan. Mostramos lo que el expediente permite observar; el resto permanece detrás de la puerta del estudio.",
@@ -14,7 +14,24 @@ export const siteCopy = {
 		"Primero el contexto, después el dato, después la ficha. Como en un pasillo bien diseñado: se sabe dónde esperar, dónde consultar y dónde no entrar.",
 	ctaPrimary: "Buscar abogados",
 	ctaSecondary: "Acceso autenticado",
-	footer: "deley.pe. Información ilustrativa a partir de casos observados.",
+	footer: "deley.com. Información ilustrativa a partir de casos observados.",
+	aboutKicker: "Acerca de",
+	aboutTitle: "Información jurídica observable, no reputación informal",
+	aboutLead:
+		"deley.com resume volumen, resultados y tiempos a partir de casos que el expediente permite ver. El dato no es veredicto ni ranking de colegio.",
+	aboutMissionTitle: "Misión",
+	aboutMission:
+		"Dar contexto medible a quien elige o coordina abogados: primero el historial observado, después la ficha, sin mezclar lo público con lo confidencial del despacho.",
+	aboutProductTitle: "Producto",
+	aboutProduct:
+		"Directorio de fichas, búsqueda por materia y sede, y un conector MCP para consultar providencias y perfiles desde herramientas compatibles.",
+	aboutTeamTitle: "Criterio",
+	aboutTeam:
+		"Lenguaje sobrio, disclaimers visibles y sin tasas de éxito. Lo que no se puede observar no se infiere.",
+	contactKicker: "Contacto",
+	contactTitle: "Escríbenos",
+	contactLead:
+		"Consultas sobre el directorio, fichas públicas o el conector MCP. Los mensajes se guardan para revisión desde el acceso autenticado.",
 } as const;
 
 export const stats = [

@@ -8,14 +8,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const links = [
-	{ href: "/", label: "Home" },
+	{ href: "/", label: "Inicio" },
 	{ href: "/abogados", label: "Buscar" },
-	{ href: "/variantes", label: "Variantes" },
 	{ href: "/dashboard/chat", label: "Chat" },
-	{ href: "/prueba", label: "Prueba MCP" },
 	{ href: "/docs", label: "Docs" },
-	{ href: "/about", label: "About" },
-	{ href: "/contact", label: "Contact" },
+	{ href: "/about", label: "Acerca" },
+	{ href: "/contact", label: "Contacto" },
 ];
 
 export function MarketingNavbar() {
@@ -30,12 +28,12 @@ export function MarketingNavbar() {
 				>
 					<Image
 						src="/deley-pe-logo.png"
-						alt=""
+						alt="deley.com"
 						width={28}
 						height={28}
 						className="size-7"
 					/>
-					deley.pe
+					deley.com
 				</Link>
 				<nav className="flex items-center gap-1 sm:gap-2">
 					{links.map((link) => (
@@ -56,7 +54,7 @@ export function MarketingNavbar() {
 					<Button asChild variant="outline" size="sm" className="ml-1">
 						<Link href="/sign-in">
 							<User2Icon className="size-4" />
-							<span className="hidden sm:inline">Sign in</span>
+							<span className="hidden sm:inline">Ingresar</span>
 						</Link>
 					</Button>
 				</nav>

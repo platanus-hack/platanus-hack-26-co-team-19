@@ -63,7 +63,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 					href="/"
 					className="px-2 py-1.5 font-serif text-sm tracking-[0.2em]"
 				>
-					deley.pe
+					deley.com
 				</Link>
 			</SidebarHeader>
 			<div className="px-4">

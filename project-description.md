@@ -1,8 +1,8 @@
-# deley.pe
+# deley.com
 
 **Track:** Access · **Equipo:** team-19 (Bogotá)
 
-deley.pe es una aplicación que muestra **métricas de abogados** a partir del historial de casos que han realizado. El track Access cubre quién entra al panel y quién puede ver esos datos de desempeño.
+deley.com es una aplicación que muestra **métricas de abogados** a partir del historial de casos que han realizado. El track Access cubre quién entra al panel y quién puede ver esos datos de desempeño.
 
 ## Problema
 

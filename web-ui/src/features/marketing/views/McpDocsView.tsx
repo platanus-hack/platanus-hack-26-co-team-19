@@ -15,7 +15,7 @@ import { MarketingNavbar } from "../components/MarketingNavbar";
 const MCP_URL =
 	process.env.NEXT_PUBLIC_MCP_SERVER_URL ?? "http://206.189.200.33/mcp";
 
-const CONNECTOR_NAME = "deley.pe";
+const CONNECTOR_NAME = "deley.com";
 
 const tools = [
 	{
@@ -95,7 +95,7 @@ export default function McpDocsView() {
 					MCP del Consejo de Estado
 				</h1>
 				<p className="mt-4 max-w-2xl text-muted-foreground leading-relaxed">
-					Conecta el servidor MCP de deley.pe a agentes externos (Claude,
+					Conecta el servidor MCP de deley.com a agentes externos (Claude,
 					ChatGPT, Cursor u otros clientes que hablen Model Context Protocol).
 					Las tools consultan providencias, perfiles de ponentes y votos.
 				</p>
@@ -276,7 +276,7 @@ export default function McpDocsView() {
 				</section>
 			</main>
 			<footer className="border-t py-6 text-center text-sm text-muted-foreground">
-				© {new Date().getFullYear()} deley.pe. Endpoint público; datos de
+				© {new Date().getFullYear()} deley.com. Endpoint público; datos de
 				jurisprudencia.
 			</footer>
 		</div>

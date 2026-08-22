@@ -3,7 +3,7 @@ import {
 	sampleLawyers,
 	siteCopy,
 	stats,
-} from "@/features/design-variants/data/copy";
+} from "@/features/marketing/data/copy";
 import { MarketingNavbar } from "../components/MarketingNavbar";
 
 export default function LandingView() {
