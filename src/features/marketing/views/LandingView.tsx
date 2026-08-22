@@ -20,10 +20,10 @@ export default function LandingView() {
 					</p>
 					<div className="mt-8 flex flex-wrap gap-3">
 						<Button asChild>
-							<Link href="/sign-up">Empezar</Link>
+							<Link href="/dashboard">Empezar</Link>
 						</Button>
 						<Button asChild variant="outline">
-							<Link href="/about">Conocer más</Link>
+							<Link href="/abogados">Buscar abogados</Link>
 						</Button>
 					</div>
 				</div>

@@ -1,5 +1,5 @@
-import UserProfileView from "@/features/user/views/UserProfileView";
+import LawyerDashboardView from "@/features/lawyer-profile/views/LawyerDashboardView";
 
 export default function DashboardPage() {
-	return <UserProfileView />;
+	return <LawyerDashboardView />;
 }

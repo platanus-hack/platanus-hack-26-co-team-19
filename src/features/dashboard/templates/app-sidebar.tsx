@@ -48,8 +48,12 @@ const data = {
 			isActive: true,
 			items: [
 				{
-					title: "Inicio",
+					title: "Abogados",
 					url: "/dashboard",
+				},
+				{
+					title: "Perfil",
+					url: "/dashboard/profile",
 				},
 				{
 					title: "Contactos",
