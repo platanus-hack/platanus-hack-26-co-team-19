@@ -8,18 +8,13 @@ output "terraform_state_key" {
   value       = local.state_key
 }
 
-output "terraform_lock_table_name" {
-  description = "DynamoDB table used for Terraform state locking."
-  value       = aws_dynamodb_table.terraform_lock.name
-}
-
 output "terraform_backend_configuration" {
   description = "Non-sensitive backend values required to initialize terraform/main."
   value = {
-    bucket         = aws_s3_bucket.terraform_state.bucket
-    key            = local.state_key
-    region         = var.aws_region
-    dynamodb_table = aws_dynamodb_table.terraform_lock.name
-    encrypt        = true
+    bucket       = aws_s3_bucket.terraform_state.bucket
+    key          = local.state_key
+    region       = var.aws_region
+    encrypt      = true
+    use_lockfile = true
   }
 }

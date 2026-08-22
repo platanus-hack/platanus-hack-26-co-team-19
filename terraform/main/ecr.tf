@@ -1,5 +1,4 @@
-# ECR repositories are prepared for future container-based OCR packaging.
-# The current placeholder Lambdas are deployed as ZIP archives from services/.
+# ECR repositories for the OCR Lambda container images.
 
 locals {
   ocr_ecr_repositories = {
@@ -52,4 +51,14 @@ resource "aws_ecr_lifecycle_policy" "ocr" {
       }
     ]
   })
+}
+
+data "aws_ecr_image" "ocr_job_reader" {
+  repository_name = aws_ecr_repository.ocr["job_reader"].name
+  image_tag       = var.ocr_job_reader_image_tag
+}
+
+data "aws_ecr_image" "ocr_document_processor" {
+  repository_name = aws_ecr_repository.ocr["document_processor"].name
+  image_tag       = var.ocr_document_processor_image_tag
 }

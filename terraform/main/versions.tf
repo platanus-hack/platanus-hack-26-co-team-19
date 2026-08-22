@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.10.0"
 
   # Values are supplied with -backend-config after terraform/bootstrap is applied.
   backend "s3" {}
