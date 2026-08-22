@@ -1,2 +1,4 @@
-# No third-party dependencies yet.
-# Pin OCR, DeepSeek client, and PostgreSQL dependencies here when implemented.
+# LiteParse is compiled as the native `lit` CLI in this service's Dockerfile.
+boto3==1.35.99
+psycopg[binary]==3.2.10
+pydantic==2.11.4

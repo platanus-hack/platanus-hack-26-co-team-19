@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 from typing import Any
+
 import boto3
 import psycopg
 from psycopg.rows import dict_row
@@ -23,7 +24,7 @@ REQUIRED_POSTGRES_SETTINGS = (
 PENDING_PROVIDENCIAS_QUERY = """
 SELECT
     id,
-    path
+    s3_key
 FROM corte.providencias
 WHERE status = %s
    OR status IS NULL
@@ -34,7 +35,7 @@ LIMIT %s
 
 
 def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
-    """Fetch incomplete providencias and return only the id/path Map contract."""
+    """Fetch incomplete providencias and return only the id/s3_key Map contract."""
     del event, context
 
     secret_arn = os.environ.get("POSTGRES_SECRET_ARN")
@@ -82,15 +83,15 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     skipped_missing_identity = 0
     for providencia in providencias:
         providencia_id = providencia.get("id")
-        path = providencia.get("path")
-        if providencia_id is None or path is None:
+        s3_key = providencia.get("s3_key")
+        if providencia_id is None or s3_key is None:
             skipped_missing_identity += 1
             continue
 
         items.append(
             {
                 "id": str(providencia_id),
-                "path": str(path),
+                "s3_key": str(s3_key),
             }
         )
 
@@ -99,6 +100,6 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         "summary": {
             "selected": len(items),
             "limit": MAX_BATCH_SIZE,
-            "skipped_missing_id_or_path": skipped_missing_identity,
+            "skipped_missing_id_or_s3_key": skipped_missing_identity,
         },
     }

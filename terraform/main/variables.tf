@@ -85,3 +85,40 @@ variable "legal_documents_bucket_name" {
     error_message = "legal_documents_bucket_name must be a valid 3-63 character lowercase S3 bucket name."
   }
 }
+
+variable "lambda_packaging_python" {
+  description = "Python interpreter with pip used to build Lambda dependency packages. Override it when /usr/local/bin/python3 is unavailable."
+  type        = string
+  default     = "/usr/local/bin/python3"
+}
+
+variable "deepseek_secret_name" {
+  description = "Optional Secrets Manager name for the DeepSeek API key. The key is never supplied to Terraform."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "deepseek_model" {
+  description = "DeepSeek model used for structured providencia extraction."
+  type        = string
+  default     = "deepseek-v4-flash"
+}
+
+variable "providencia_complete_status" {
+  description = "Status stored after the OCR processor validates and persists a providencia."
+  type        = string
+  default     = "COMPLETE"
+}
+
+
+variable "ocr_job_reader_image_tag" {
+  description = "Immutable ECR image tag to deploy for the OCR job-reader container image."
+  type        = string
+  default     = "ocr-reader-v1"
+}
+variable "ocr_document_processor_image_tag" {
+  description = "Immutable ECR image tag to deploy once the OCR processor moves to a container image."
+  type        = string
+  default     = "ocr-processor-v2"
+}

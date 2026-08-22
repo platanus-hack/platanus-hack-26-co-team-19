@@ -1,2 +1,3 @@
-# Build this dependency for the Amazon Linux Lambda runtime before deployment.
+# Dependencies installed in the reader's Linux Lambda container image.
+boto3==1.35.99
 psycopg[binary]==3.2.10

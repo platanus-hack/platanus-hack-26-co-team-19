@@ -40,6 +40,21 @@ def main() -> int:
         print(f"Lambda requirements not found: {requirements_path}", file=sys.stderr)
         return 2
 
+    pip_check = subprocess.run(
+        [sys.executable, "-m", "pip", "--version"],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+    if pip_check.returncode != 0:
+        print(
+            "The selected Python interpreter has no pip: "
+            f"{sys.executable}. Set Terraform variable lambda_packaging_python "
+            "to a Python 3.12 interpreter with pip.",
+            file=sys.stderr,
+        )
+        return 1
+
     pip_command = [
         sys.executable,
         "-m",
