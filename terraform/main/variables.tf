@@ -66,3 +66,22 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "postgres_secret_name" {
+  description = "Optional Secrets Manager name for PostgreSQL credentials. The secret value is never supplied to Terraform."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "legal_documents_bucket_name" {
+  description = "Optional globally unique S3 bucket name for private legal documents. When null, it is derived from project, environment, account ID, and region."
+  type        = string
+  default     = null
+  nullable    = true
+
+  validation {
+    condition     = var.legal_documents_bucket_name == null || can(regex("^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$", var.legal_documents_bucket_name))
+    error_message = "legal_documents_bucket_name must be a valid 3-63 character lowercase S3 bucket name."
+  }
+}

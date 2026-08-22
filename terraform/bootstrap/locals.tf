@@ -4,8 +4,7 @@ locals {
     "${var.project_name}-terraform-state-${data.aws_caller_identity.current.account_id}-${var.aws_region}",
   )
 
-  state_key       = "${var.project_name}/${var.environment}/terraform.tfstate"
-  lock_table_name = "${var.project_name}-${var.environment}-terraform-locks"
+  state_key = "${var.project_name}/${var.environment}/terraform.tfstate"
 
   common_tags = merge(
     {

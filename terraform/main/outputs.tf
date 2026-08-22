@@ -19,3 +19,23 @@ output "ocr_ecr_repository_urls" {
     for name, repository in aws_ecr_repository.ocr : name => repository.repository_url
   }
 }
+
+output "postgres_secret_arn" {
+  description = "ARN of the Secrets Manager secret containing PostgreSQL settings."
+  value       = aws_secretsmanager_secret.postgres.arn
+}
+
+output "postgres_secret_name" {
+  description = "Name of the PostgreSQL secret to use with the local publisher."
+  value       = aws_secretsmanager_secret.postgres.name
+}
+
+output "legal_documents_bucket_name" {
+  description = "Name of the private S3 bucket for legal documents."
+  value       = aws_s3_bucket.legal_documents.bucket
+}
+
+output "legal_documents_bucket_arn" {
+  description = "ARN of the private S3 bucket for legal documents."
+  value       = aws_s3_bucket.legal_documents.arn
+}

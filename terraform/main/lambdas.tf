@@ -1,7 +1,21 @@
+resource "terraform_data" "ocr_job_reader_package" {
+  triggers_replace = {
+    handler      = filesha256("${path.module}/../../services/ocr_job_reader/handler.py")
+    packager     = filesha256("${path.module}/../../scripts/package_lambda.py")
+    requirements = filesha256("${path.module}/../../services/ocr_job_reader/requirements.txt")
+  }
+
+  provisioner "local-exec" {
+    command = "python3 \"${path.module}/../../scripts/package_lambda.py\" --source-dir \"${path.module}/../../services/ocr_job_reader\" --build-dir \"${path.module}/.build/ocr-job-reader-package\""
+  }
+}
+
 data "archive_file" "ocr_job_reader" {
   type        = "zip"
-  source_dir  = "${path.module}/../../services/ocr_job_reader"
+  source_dir  = "${path.module}/.build/ocr-job-reader-package"
   output_path = "${path.module}/.build/ocr-job-reader.zip"
+
+  depends_on = [terraform_data.ocr_job_reader_package]
 }
 
 data "archive_file" "ocr_document_processor" {
@@ -50,13 +64,15 @@ resource "aws_lambda_function" "ocr_job_reader" {
 
   environment {
     variables = {
-      SERVICE_NAME = "ocr-job-reader"
+      POSTGRES_SECRET_ARN = aws_secretsmanager_secret.postgres.arn
+      SERVICE_NAME        = "ocr-job-reader"
     }
   }
 
   depends_on = [
     aws_cloudwatch_log_group.ocr_job_reader,
     aws_iam_role_policy_attachment.ocr_job_reader_basic_execution,
+    aws_iam_role_policy_attachment.ocr_job_reader_postgres_secret_read,
   ]
 
   tags = merge(
@@ -83,13 +99,17 @@ resource "aws_lambda_function" "ocr_document_processor" {
 
   environment {
     variables = {
-      SERVICE_NAME = "ocr-document-processor"
+      LEGAL_DOCUMENTS_BUCKET = aws_s3_bucket.legal_documents.bucket
+      POSTGRES_SECRET_ARN    = aws_secretsmanager_secret.postgres.arn
+      SERVICE_NAME           = "ocr-document-processor"
     }
   }
 
   depends_on = [
     aws_cloudwatch_log_group.ocr_document_processor,
     aws_iam_role_policy_attachment.ocr_document_processor_basic_execution,
+    aws_iam_role_policy_attachment.ocr_document_processor_legal_documents_read,
+    aws_iam_role_policy_attachment.ocr_document_processor_postgres_secret_read,
   ]
 
   tags = merge(
