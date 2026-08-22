@@ -1,5 +1,7 @@
 # Next.js Better Auth Template
 
+This directory (`web-ui/`) is the Next.js app. Run all Bun, Prisma, and Next commands from here.
+
 Next.js App Router template with Better Auth, Prisma (multi-file schema), tRPC, Shadcn UI, Resend, and Minio.
 
 ## Tech stack

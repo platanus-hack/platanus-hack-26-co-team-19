@@ -6,7 +6,7 @@ Track: Access · Platanus Hack 26 Bogotá · team-19
 
 Métricas de abogados a partir del historial de casos. Acceso autenticado al panel (Next.js, Better Auth, Prisma, tRPC, PostgreSQL).
 
-Logo generado (aún no aplicado): [deley-pe-logo.png](./deley-pe-logo.png). Setup detallado: [README.app.md](./README.app.md).
+Logo generado (aún no aplicado): [deley-pe-logo.png](./deley-pe-logo.png).
 
 ## Equipo
 
@@ -16,7 +16,10 @@ Logo generado (aún no aplicado): [deley-pe-logo.png](./deley-pe-logo.png). Setu
 
 ## Correr en local
 
+La app Next.js está en `web-ui/`. Setup detallado: [web-ui/README.app.md](./web-ui/README.app.md).
+
 ```bash
+cd web-ui
 bun install
 cp .env.example .env
 # DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL, NEXT_PUBLIC_APP_URL
@@ -24,7 +27,7 @@ bunx prisma migrate dev
 bun dev
 ```
 
-Opcional: `docker compose up` para Postgres y Minio.
+Opcional: `docker compose up` desde `web-ui/` para Minio.
 
 ## Deploy (Vercel, Render, Netlify)
 

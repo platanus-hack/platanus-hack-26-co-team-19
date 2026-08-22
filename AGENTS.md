@@ -1,10 +1,12 @@
 # Project: Next.js Better Auth Template
 
+The Next.js app lives in `web-ui/`. Run Bun, Prisma, and Next from that directory.
+
 Next.js App Router template with Better Auth, Prisma (multi-file schema), tRPC, Shadcn UI, Resend, and Minio.
 
 ## Tech Stack
 
-From `package.json` (pin to repo versions when upgrading):
+From `web-ui/package.json` (pin to repo versions when upgrading):
 
 - **Framework:** Next.js 16 (App Router) + React 19 + TypeScript
 - **Auth:** Better Auth
@@ -18,23 +20,23 @@ From `package.json` (pin to repo versions when upgrading):
 
 ## Project Structure
 
-- `src/app/` — App Router pages and API routes (`/api/auth/[...all]`, tRPC)
-- `src/features/` — Feature modules (schemas, hooks, components)
-- `src/lib/` — Auth, Prisma, Resend, Minio, config, tRPC
-- `src/components/` — Shared UI (including Shadcn `ui/`)
-- `src/generated/prisma` — Generated Prisma client
-- `prisma/` — Multi-file schema, migrations, seed/reset
+- `web-ui/src/app/` — App Router pages and API routes (`/api/auth/[...all]`, tRPC)
+- `web-ui/src/features/` — Feature modules (schemas, hooks, components)
+- `web-ui/src/lib/` — Auth, Prisma, Resend, Minio, config, tRPC
+- `web-ui/src/components/` — Shared UI (including Shadcn `ui/`)
+- `web-ui/src/generated/prisma` — Generated Prisma client
+- `web-ui/prisma/` — Multi-file schema, migrations, seed/reset
 - `docs/` — Extra documentation / PRDs
 
-### Prisma layout (`prisma.config.ts` → `schema: "prisma/"`)
+### Prisma layout (`web-ui/prisma.config.ts` → `schema: "prisma/"`)
 
 | Path | Role |
 | --- | --- |
-| `prisma/schema.prisma` | `generator` + `datasource` only |
-| `prisma/models/auth.prisma` | Better Auth models |
-| `prisma/models/*.prisma` | Domain models (e.g. `marketing.prisma`) |
-| `prisma/migrations/` | Migration history |
-| `src/generated/prisma` | Generated client |
+| `web-ui/prisma/schema.prisma` | `generator` + `datasource` only |
+| `web-ui/prisma/models/auth.prisma` | Better Auth models |
+| `web-ui/prisma/models/*.prisma` | Domain models (e.g. `marketing.prisma`) |
+| `web-ui/prisma/migrations/` | Migration history |
+| `web-ui/src/generated/prisma` | Generated client |
 
 Do **not** put `generator` or `datasource` in model files.
 
@@ -49,6 +51,7 @@ Do **not** put `generator` or `datasource` in model files.
 ### Install and run
 
 ```bash
+cd web-ui
 bun install
 cp .env.example .env
 # Fill DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL, NEXT_PUBLIC_APP_URL, etc.
@@ -56,12 +59,12 @@ bunx prisma migrate dev
 bun dev
 ```
 
-Env validation: `src/lib/config.ts`.
+Env validation: `web-ui/src/lib/config.ts`.
 
 `bun install` runs `postinstall` → `prisma generate`.  
 `bun dev` runs `prisma generate && next dev`.
 
-## Scripts (`package.json`)
+## Scripts (`web-ui/package.json`)
 
 | Command | What it does |
 | --- | --- |
@@ -75,6 +78,8 @@ Env validation: `src/lib/config.ts`.
 | `bun run db:seed` | `prisma db seed` (seed: `tsx prisma/seed.ts`) |
 
 ## Migrations, generation, and schema updates
+
+Commands below assume `cwd` is `web-ui/`.
 
 ### Prisma client
 
@@ -136,21 +141,21 @@ Important:
 Flow:
 
 ```text
-src/lib/auth/index.ts
+web-ui/src/lib/auth/index.ts
         │
         ▼
 @better-auth/cli generate --output prisma/models/auth.prisma
         │
         ▼
-prisma/models/auth.prisma (+ schema.prisma + other models)
+web-ui/prisma/models/auth.prisma (+ schema.prisma + other models)
         │
         ▼
-prisma migrate dev  →  prisma generate  →  src/generated/prisma
+prisma migrate dev  →  prisma generate  →  web-ui/src/generated/prisma
 ```
 
 ## Development Conventions
 
-- **Code style:** Biome via `bun run lint` / `bun run format`.
+- **Code style:** Biome via `bun run lint` / `bun run format` (from `web-ui/`).
 - **UI:** Follow Shadcn UI patterns for new components.
 - **Validation:** Zod 4 in feature schemas and env config.
 - **Auth:** Server `auth` / client `authClient` from `src/lib/`.
