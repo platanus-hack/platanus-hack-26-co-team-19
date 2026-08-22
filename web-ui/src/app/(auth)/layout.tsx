@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
+import BrandMark from "@/features/marketing/components/BrandMark";
 import { site } from "@/features/marketing/data/site";
 
 export const metadata: Metadata = {
@@ -17,14 +17,11 @@ export default function AuthLayout({
 		<div className="grid min-h-svh lg:grid-cols-2">
 			<div className="flex flex-col gap-4 p-6 md:p-10">
 				<div className="flex justify-center gap-2 md:justify-start">
-					<Link href="/" className="flex items-center gap-2 font-medium">
-						<Image
-							src="/deley-pe-logo.png"
-							alt={site.name}
-							width={24}
-							height={24}
-							className="size-6"
-						/>
+					<Link
+						href="/"
+						className="flex items-center gap-2 font-serif tracking-[0.15em]"
+					>
+						<BrandMark className="size-6 text-base" />
 						{site.name}
 					</Link>
 				</div>
@@ -34,13 +31,8 @@ export default function AuthLayout({
 					</div>
 				</div>
 			</div>
-			<div className="relative hidden bg-muted lg:block">
-				<Image
-					src="/deley-pe-logo.png"
-					alt=""
-					fill
-					className="object-contain p-16 opacity-40"
-				/>
+			<div className="hidden items-center justify-center bg-[#1a1916] lg:flex">
+				<span className="font-serif text-8xl font-bold text-[#c4a574]">d</span>
 			</div>
 		</div>
 	);

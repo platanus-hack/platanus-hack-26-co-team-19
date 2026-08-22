@@ -89,14 +89,20 @@ export const replaceMessages = async (
 		throw new Error("Conversation not found");
 	}
 
+	const uniqueMessages = [
+		...new Map(messages.map((message) => [message.id, message])).values(),
+	];
+
 	await db.$transaction([
 		db.chatMessage.deleteMany({ where: { conversationId: id } }),
 		db.chatMessage.createMany({
-			data: messages.map((message, index) => ({
+			data: uniqueMessages.map((message, index) => ({
 				id: message.id,
 				conversationId: id,
 				role: message.role,
-				parts: message.parts as Prisma.InputJsonValue,
+				parts: JSON.parse(
+					JSON.stringify(message.parts ?? []),
+				) as Prisma.InputJsonValue,
 				createdAt: new Date(Date.now() + index),
 			})),
 		}),

@@ -10,44 +10,51 @@ export default function OpenGraphImage() {
 		<div
 			style={{
 				display: "flex",
-				flexDirection: "column",
-				justifyContent: "center",
+				alignItems: "center",
 				width: "100%",
 				height: "100%",
 				padding: 80,
 				background: "#1a1916",
 				color: "#f4f1ea",
+				gap: 48,
 			}}
 		>
 			<div
 				style={{
-					fontSize: 28,
-					letterSpacing: 8,
-					textTransform: "uppercase",
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+					width: 180,
+					height: 180,
+					background: "#1a1916",
 					color: "#c4a574",
+					fontSize: 110,
+					fontWeight: 700,
+					border: "2px solid #c4a574",
 				}}
 			>
-				{siteCopy.brand}
+				d
 			</div>
-			<div
-				style={{
-					marginTop: 28,
-					fontSize: 52,
-					lineHeight: 1.2,
-					maxWidth: 980,
-				}}
-			>
-				{siteCopy.headline}
-			</div>
-			<div
-				style={{
-					marginTop: 24,
-					fontSize: 24,
-					color: "#d5d0c4",
-					maxWidth: 900,
-				}}
-			>
-				{siteCopy.kicker}
+			<div style={{ display: "flex", flexDirection: "column" }}>
+				<div
+					style={{
+						fontSize: 42,
+						letterSpacing: 6,
+						color: "#c4a574",
+					}}
+				>
+					{siteCopy.brand}
+				</div>
+				<div
+					style={{
+						marginTop: 16,
+						fontSize: 36,
+						lineHeight: 1.3,
+						maxWidth: 780,
+					}}
+				>
+					{siteCopy.headline}
+				</div>
 			</div>
 		</div>,
 		{ ...size },

@@ -17,6 +17,7 @@ import ChatSidebarHistory from "@/features/chat/components/ChatSidebarHistory";
 import { NavMain } from "@/features/dashboard/components/nav-main";
 import { NavProjects } from "@/features/dashboard/components/nav-projects";
 import { NavUser } from "@/features/dashboard/components/nav-user";
+import BrandMark from "@/features/marketing/components/BrandMark";
 
 const data = {
 	navMain: [
@@ -61,9 +62,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			<SidebarHeader>
 				<Link
 					href="/"
-					className="px-2 py-1.5 font-serif text-sm tracking-[0.2em]"
+					className="flex items-center gap-2 px-2 py-1.5 font-serif text-sm tracking-[0.2em]"
 				>
-					deley.com
+					<BrandMark className="size-6 text-base" />
+					<span className="group-data-[collapsible=icon]:hidden">
+						deley.com
+					</span>
 				</Link>
 			</SidebarHeader>
 			<div className="px-4">

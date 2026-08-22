@@ -53,6 +53,48 @@ resource "aws_ecr_lifecycle_policy" "ocr" {
   })
 }
 
+resource "aws_ecr_repository" "scraper" {
+  name                 = local.scraper_function_name
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  encryption_configuration {
+    encryption_type = "AES256"
+  }
+
+  tags = merge(
+    local.common_tags,
+    {
+      Component = "scrapping-samai"
+      Name      = local.scraper_function_name
+    },
+  )
+}
+
+resource "aws_ecr_lifecycle_policy" "scraper" {
+  repository = aws_ecr_repository.scraper.name
+
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description  = "Keep the last 3 images"
+        selection = {
+          tagStatus   = "any"
+          countType   = "imageCountMoreThan"
+          countNumber = 3
+        }
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
+}
+
 data "aws_ecr_image" "ocr_job_reader" {
   repository_name = aws_ecr_repository.ocr["job_reader"].name
   image_tag       = var.ocr_job_reader_image_tag

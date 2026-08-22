@@ -1,0 +1,47 @@
+#!/bin/bash
+set -euxo pipefail
+
+dnf install -y docker jq
+systemctl enable --now docker
+usermod -aG docker ec2-user
+
+REGION="${aws_region}"
+REPO="${repository_url}"
+TAG="${image_tag}"
+IMAGE="$${REPO}:$${TAG}"
+
+aws ecr get-login-password --region "$${REGION}" \
+  | docker login --username AWS --password-stdin "${registry}"
+
+for _ in $(seq 1 30); do
+  if docker pull "$${IMAGE}"; then
+    break
+  fi
+  sleep 20
+done
+
+PG_JSON="$(aws secretsmanager get-secret-value --region "$${REGION}" \
+  --secret-id "${postgres_secret_arn}" --query SecretString --output text)"
+TOKEN="$(aws secretsmanager get-secret-value --region "$${REGION}" \
+  --secret-id "${scraper_token_secret_arn}" --query SecretString --output text)"
+
+PGHOST="$(echo "$${PG_JSON}" | jq -r '.POSTGRES_HOST')"
+PGPORT="$(echo "$${PG_JSON}" | jq -r '.POSTGRES_PORT')"
+PGDATABASE="$(echo "$${PG_JSON}" | jq -r '.POSTGRES_DB')"
+PGUSER="$(echo "$${PG_JSON}" | jq -r '.POSTGRES_USER')"
+PGPASSWORD="$(echo "$${PG_JSON}" | jq -r '.POSTGRES_PASSWORD')"
+
+docker rm -f scrapping-samai || true
+docker run -d --name scrapping-samai --restart unless-stopped \
+  --shm-size=2g \
+  -p 8000:8000 \
+  -e PGHOST="$${PGHOST}" \
+  -e PGPORT="$${PGPORT}" \
+  -e PGDATABASE="$${PGDATABASE}" \
+  -e PGUSER="$${PGUSER}" \
+  -e PGPASSWORD="$${PGPASSWORD}" \
+  -e S3_BUCKET="${s3_bucket}" \
+  -e S3_PREFIX="pdfs/" \
+  -e AWS_REGION="$${REGION}" \
+  -e SCRAPER_TOKEN="$${TOKEN}" \
+  "$${IMAGE}"

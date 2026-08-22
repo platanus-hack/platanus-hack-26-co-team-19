@@ -1,5 +1,4 @@
 import { ImageResponse } from "next/og";
-import { siteCopy } from "@/features/marketing/data/copy";
 
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
@@ -15,11 +14,11 @@ export default function AppleIcon() {
 				height: "100%",
 				background: "#1a1916",
 				color: "#c4a574",
-				fontSize: 72,
+				fontSize: 110,
 				fontWeight: 700,
 			}}
 		>
-			{siteCopy.brand.slice(0, 1)}
+			d
 		</div>,
 		{ ...size },
 	);

@@ -122,3 +122,34 @@ variable "ocr_document_processor_image_tag" {
   type        = string
   default     = "ocr-processor-v2"
 }
+
+variable "scraper_image_tag" {
+  description = "ECR image tag pulled by the scrapping-samai EC2 instance."
+  type        = string
+  default     = "scraper-v1"
+}
+
+variable "scraper_instance_type" {
+  description = "EC2 instance type for the Selenium scraper API."
+  type        = string
+  default     = "t3.medium"
+}
+
+variable "scraper_http_cidr_blocks" {
+  description = "CIDR blocks allowed to reach the scraper HTTP API on port 8000."
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}
+
+variable "scraper_ssh_cidr_blocks" {
+  description = "CIDR blocks allowed to SSH to the scraper instance. Empty disables SSH."
+  type        = list(string)
+  default     = []
+}
+
+variable "scraper_key_name" {
+  description = "Optional EC2 key pair name for SSH."
+  type        = string
+  default     = null
+  nullable    = true
+}

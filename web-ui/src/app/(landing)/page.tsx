@@ -23,7 +23,7 @@ export default function LandingPage() {
 							"@type": "Organization",
 							name: site.name,
 							url: site.url,
-							logo: `${site.url}/deley-pe-logo.png`,
+							logo: `${site.url}/apple-icon`,
 							description: site.defaultDescription,
 						},
 						{

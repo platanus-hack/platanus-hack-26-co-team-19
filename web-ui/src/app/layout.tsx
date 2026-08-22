@@ -41,10 +41,7 @@ export const metadata: Metadata = {
 	authors: [{ name: site.name, url: site.url }],
 	keywords: [...site.keywords],
 	icons: {
-		icon: [
-			{ url: "/favicon.ico", sizes: "any" },
-			{ url: "/icon", type: "image/png" },
-		],
+		icon: [{ url: "/icon", type: "image/png" }],
 		apple: [{ url: "/apple-icon", type: "image/png" }],
 	},
 	alternates: {

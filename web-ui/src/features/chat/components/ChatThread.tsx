@@ -34,18 +34,40 @@ const ChatThread = ({ conversationId, initialMessages }: ChatThreadProps) => {
 		id: conversationId,
 		messages: initialMessages,
 		transport,
-		onFinish: () => {
+		onFinish: ({ isError, isDisconnect, isAbort }) => {
+			if (isError || isDisconnect || isAbort) {
+				return;
+			}
 			void queryClient.invalidateQueries(trpc.chat.list.queryOptions());
 			void queryClient.invalidateQueries(
 				trpc.chat.get.queryOptions({ id: conversationId }),
 			);
 		},
 		onError: (err) => {
-			toast.error(err.message || "Error al enviar el mensaje");
+			const isNetwork =
+				err instanceof TypeError &&
+				(err.message.toLowerCase().includes("fetch") ||
+					err.message.toLowerCase().includes("network"));
+			toast.error(
+				isNetwork
+					? "Se cortó la conexión al cerrar el stream. Si ves la respuesta, ya está generada."
+					: err.message || "Error al enviar el mensaje",
+			);
 		},
 	});
 
 	const isBusy = status === "submitted" || status === "streaming";
+	const hasAssistantReply = messages.some(
+		(message) =>
+			message.role === "assistant" &&
+			message.parts.some(
+				(part) =>
+					(part.type === "text" && "text" in part && part.text.trim()) ||
+					part.type === "reasoning" ||
+					part.type === "dynamic-tool" ||
+					part.type.startsWith("tool-"),
+			),
+	);
 	const bottomRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -95,8 +117,13 @@ const ChatThread = ({ conversationId, initialMessages }: ChatThreadProps) => {
 							Preparando respuesta…
 						</p>
 					) : null}
-					{error ? (
-						<p className="text-sm text-destructive">{error.message}</p>
+					{error && status === "error" && !hasAssistantReply ? (
+						<p className="text-sm text-destructive">
+							{error.message.toLowerCase().includes("network") ||
+							error.message.toLowerCase().includes("fetch")
+								? "No se pudo confirmar el cierre del stream. Revisa si la respuesta ya apareció arriba."
+								: error.message}
+						</p>
 					) : null}
 					<div ref={bottomRef} />
 				</div>

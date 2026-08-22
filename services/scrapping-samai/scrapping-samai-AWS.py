@@ -1,6 +1,8 @@
 import io
 import os
 import re
+import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -14,8 +16,13 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+from pathlib import Path
+
 from dotenv import load_dotenv
-load_dotenv()
+from selenium.webdriver.chrome.service import Service
+
+_SCRIPT_DIR = Path(__file__).resolve().parent
+load_dotenv(_SCRIPT_DIR / ".env")
 
 # CONFIG
 PG = dict(host=os.getenv("PGHOST", "localhost"),
@@ -36,7 +43,7 @@ BTN_BUSCAR = "MainContent_BuscarProvidenciasLinkButton"
 BTN_DESCARGA = "MainContent_ResultadoBusqueda1_DescargarDocumentosLinkButton"
 BTN_SIG = "MainContent_ResultadoBusqueda1_PaginaSiguienteLinkButton"
 LBL_PAG = "MainContent_ResultadoBusqueda1_PaginaActualLabel"
-TMP = os.path.abspath("_descargas")
+TMP = str(_SCRIPT_DIR / "_descargas")
 RE_ZIP = re.compile(r"(\d{18,25})_P(\d+)")
 
 MESES = {"enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5, "junio": 6,
@@ -234,8 +241,29 @@ class Storage:
         return os.path.relpath(ruta).replace("\\", "/")
 
 
-def espera_zip(antes, timeout=180):
-    fin = time.time() + timeout
+def _zip_desde_selenium(driver, antes):
+    if driver is None or "se:downloadsEnabled" not in getattr(driver, "capabilities", {}):
+        return None
+    try:
+        names = driver.get_downloadable_files()
+    except Exception:
+        return None
+    zips = [n for n in names if n.lower().endswith(".zip")]
+    if not zips:
+        return None
+    driver.download_file(zips[0], TMP)
+    ahora = set(os.listdir(TMP))
+    nuevos = [a for a in ahora - antes if a.lower().endswith(".zip")]
+    if nuevos:
+        return os.path.join(TMP, nuevos[0])
+    candidate = os.path.join(TMP, os.path.basename(zips[0]))
+    return candidate if os.path.isfile(candidate) else None
+
+
+def espera_zip(antes, timeout=180, driver=None):
+    t0 = time.time()
+    fin = t0 + timeout
+    aviso_15 = False
     while time.time() < fin:
         ahora = set(os.listdir(TMP))
         if any(a.endswith(".crdownload") for a in ahora):
@@ -245,6 +273,12 @@ def espera_zip(antes, timeout=180):
         if nuevos:
             time.sleep(0.5)
             return os.path.join(TMP, nuevos[0])
+        pulled = _zip_desde_selenium(driver, antes)
+        if pulled:
+            return pulled
+        if not aviso_15 and time.time() - t0 >= 15:
+            print("      zip: _descargas sigue vacía a los 15s (¿Chrome headless sin Xvfb?)")
+            aviso_15 = True
         time.sleep(1)
     return None
 
@@ -318,20 +352,200 @@ SQL_VOTO = ("INSERT INTO votos (id, certificado, radicado, magistrado, tipo)"
             " VALUES (%s,%s,%s,%s,%s)")
 
 
+def _is_chrome_binary(path: Path) -> bool:
+    try:
+        resolved = path.resolve()
+    except OSError:
+        return False
+    if not resolved.is_file():
+        return False
+    try:
+        head = resolved.read_bytes()[:4]
+    except OSError:
+        return False
+    if head[:2] == b"#!":
+        return False
+    if sys.platform == "win32":
+        return head[:2] == b"MZ"
+    return head == b"\x7fELF"
+
+
+def resolve_chrome_binary() -> Path:
+    candidates: list[Path] = []
+    env = os.getenv("CHROME_BIN")
+    if env:
+        candidates.append(Path(env))
+    if sys.platform.startswith("linux"):
+        candidates.extend([
+            Path("/opt/google/chrome/chrome"),
+            Path("/usr/bin/google-chrome-stable"),
+            Path("/usr/bin/google-chrome"),
+            Path("/usr/bin/chromium"),
+            Path("/usr/bin/chromium-browser"),
+        ])
+    elif sys.platform == "win32":
+        pf = os.environ.get("PROGRAMFILES", r"C:\Program Files")
+        pf86 = os.environ.get("PROGRAMFILES(X86)", r"C:\Program Files (x86)")
+        local = os.environ.get("LOCALAPPDATA", "")
+        candidates.extend([
+            Path(pf) / "Google" / "Chrome" / "Application" / "chrome.exe",
+            Path(pf86) / "Google" / "Chrome" / "Application" / "chrome.exe",
+        ])
+        if local:
+            candidates.append(
+                Path(local) / "Google" / "Chrome" / "Application" / "chrome.exe")
+    for raw in candidates:
+        if not raw.exists():
+            continue
+        resolved = raw.resolve()
+        if _is_chrome_binary(resolved):
+            return resolved
+        sibling_name = "chrome.exe" if sys.platform == "win32" else "chrome"
+        sibling = resolved.parent / sibling_name
+        if _is_chrome_binary(sibling):
+            return sibling.resolve()
+    raise RuntimeError(
+        "No se encontró un binario de Chrome válido. "
+        "Define CHROME_BIN apuntando al ELF/exe (p. ej. /opt/google/chrome/chrome), "
+        "no al wrapper google-chrome ni al Chromium snap.")
+
+
+def _is_snap_chromedriver_stub(path: Path) -> bool:
+    try:
+        data = path.read_bytes()[:500]
+    except OSError:
+        return False
+    if not data.startswith(b"#!"):
+        return False
+    text = data.decode("utf-8", "ignore").lower()
+    return "snap" in text and "chrom" in text
+
+
+def chromedriver_service() -> Service:
+    exe = "chromedriver.exe" if sys.platform == "win32" else "chromedriver"
+    kept = []
+    for directory in os.environ.get("PATH", "").split(os.pathsep):
+        stub = Path(directory) / exe
+        if stub.is_file() and _is_snap_chromedriver_stub(stub):
+            print(f"validador: ignorando chromedriver snap {stub}")
+            continue
+        kept.append(directory)
+    env = os.environ.copy()
+    env["PATH"] = os.pathsep.join(kept)
+    return Service(env=env)
+
+
+def start_virtual_display() -> None:
+    """Linux sin DISPLAY: Xvfb para que Chrome se comporte como en Windows (descargas)."""
+    if not sys.platform.startswith("linux"):
+        return
+    if os.getenv("SCRAPER_HEADLESS", "").lower() in ("1", "true", "yes"):
+        print("validador: SCRAPER_HEADLESS=1; las descargas ZIP pueden fallar")
+        return
+    if os.environ.get("DISPLAY"):
+        print(f"validador: DISPLAY={os.environ['DISPLAY']}")
+        return
+    xvfb = shutil.which("Xvfb")
+    if not xvfb:
+        raise RuntimeError(
+            "Linux requiere Xvfb o DISPLAY para descargar los ZIP de SAMAI. "
+            "Instala xvfb (apt install xvfb) o exporta DISPLAY. "
+            "Chrome headless no escribe el ZIP a disco."
+        )
+    display = os.getenv("SCRAPER_DISPLAY", ":99")
+    subprocess.Popen(
+        [xvfb, display, "-screen", "0", "1500x1000x24", "-ac"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    os.environ["DISPLAY"] = display
+    time.sleep(0.4)
+    print(f"validador: Xvfb iniciado en DISPLAY={display}")
+
+
+def chrome_options_for_os(download_dir: str, chrome_bin: Path) -> Options:
+    op = Options()
+    headed = bool(os.environ.get("DISPLAY")) and os.getenv("SCRAPER_HEADLESS", "").lower() not in (
+        "1", "true", "yes")
+    if headed:
+        print("validador: Chrome con ventana (Xvfb/DISPLAY); prefs de descarga como en Windows")
+    else:
+        op.add_argument("--headless=new")
+        print("validador: Chrome --headless=new")
+    op.add_argument("--window-size=1500,1000")
+    if sys.platform.startswith("linux"):
+        op.add_argument("--no-sandbox")
+        op.add_argument("--disable-dev-shm-usage")
+        op.add_argument("--disable-gpu")
+    op.binary_location = str(chrome_bin)
+    op.enable_downloads = True
+    op.add_experimental_option("prefs", {
+        "download.default_directory": download_dir,
+        "download.prompt_for_download": False,
+        "download.directory_upgrade": True,
+        "safebrowsing.enabled": True,
+        "safebrowsing.disable_download_protection": True,
+        "plugins.always_open_pdf_externally": True,
+    })
+    return op
+
+
+def enable_headless_downloads(driver, download_dir: str, *, verbose=True) -> None:
+    ok = 0
+    errors = []
+    attempts = [
+        ("Page.setDownloadBehavior",
+         {"behavior": "allow", "downloadPath": download_dir}),
+        ("Browser.setDownloadBehavior",
+         {"behavior": "allow", "downloadPath": download_dir, "eventsEnabled": True}),
+    ]
+    for cmd, payload in attempts:
+        try:
+            driver.execute_cdp_cmd(cmd, payload)
+            ok += 1
+            if verbose:
+                print(f"validador: CDP {cmd} ok")
+        except Exception as e:
+            errors.append(f"{cmd}: {type(e).__name__}: {e}")
+            if verbose:
+                print(f"validador: CDP {cmd} falló ({type(e).__name__})")
+    if ok == 0:
+        raise RuntimeError(
+            "Linux/headless: no se pudieron habilitar descargas vía CDP "
+            f"({'; '.join(errors)})")
+
+
+def validate_runtime(download_dir: str, chrome_bin: Path) -> None:
+    print(f"validador: os={sys.platform}")
+    print(f"validador: chrome={chrome_bin}")
+    os.makedirs(download_dir, exist_ok=True)
+    probe = Path(download_dir) / ".write_test"
+    try:
+        probe.write_text("ok", encoding="utf-8")
+        probe.unlink()
+    except OSError as e:
+        raise RuntimeError(f"Carpeta de descargas no escribible: {download_dir}: {e}") from e
+    print(f"validador: download_dir={download_dir} escribible")
+
+
 # RUN
 def run(paginas=10, desde=1):
-    os.makedirs(TMP, exist_ok=True)
+    start_virtual_display()
+    chrome_bin = resolve_chrome_binary()
+    validate_runtime(TMP, chrome_bin)
     con = psycopg2.connect(**PG)
     store = Storage()
 
-    op = Options()
-    op.add_argument("--window-size=1500,1000")
-    op.add_experimental_option("prefs", {
-        "download.default_directory": TMP,
-        "download.prompt_for_download": False,
-        "download.directory_upgrade": True,
-        "plugins.always_open_pdf_externally": True})
-    d = webdriver.Chrome(options=op)
+    op = chrome_options_for_os(TMP, chrome_bin)
+    d = webdriver.Chrome(options=op, service=chromedriver_service())
+    try:
+        enable_headless_downloads(d, TMP)
+    except Exception:
+        d.quit()
+        raise
+    print(f"validador: browser={d.capabilities.get('browserVersion')}")
+    print(f"validador: se:downloadsEnabled={d.capabilities.get('se:downloadsEnabled')}")
     tot = dict(prov=0, prob=0, pdf=0, voto=0)
     t0 = time.time()
 
@@ -357,9 +571,10 @@ def run(paginas=10, desde=1):
             antes = set(os.listdir(TMP))
             nota, guardados = "", {}
             try:
+                enable_headless_downloads(d, TMP, verbose=False)
                 d.execute_script("arguments[0].click();",
                                  d.find_element(By.ID, BTN_DESCARGA))
-                z = espera_zip(antes)
+                z = espera_zip(antes, driver=d)
                 if z:
                     guardados = procesa_zip(z, store, por_orden)
                     try:
@@ -408,6 +623,7 @@ def run(paginas=10, desde=1):
         con.close()
         print(f"\n{tot['prov']} providencias | {tot['prob']} problemas | "
               f"{tot['voto']} votos | {tot['pdf']} PDFs")
+    return tot
 
 def perfil(q):
     con = psycopg2.connect(**PG)

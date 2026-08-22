@@ -1,10 +1,10 @@
 "use client";
 
 import { User2Icon } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import BrandMark from "@/features/marketing/components/BrandMark";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -26,13 +26,7 @@ export function MarketingNavbar() {
 					href="/"
 					className="flex items-center gap-2 font-serif tracking-[0.15em]"
 				>
-					<Image
-						src="/deley-pe-logo.png"
-						alt="deley.com"
-						width={28}
-						height={28}
-						className="size-7"
-					/>
+					<BrandMark className="size-7 text-lg" />
 					deley.com
 				</Link>
 				<nav className="flex items-center gap-1 sm:gap-2">
