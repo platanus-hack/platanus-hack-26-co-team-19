@@ -1,0 +1,89 @@
+{
+  "Comment": "Orchestrates OCR job discovery and per-document processing.",
+  "StartAt": "DiscoverOcrJobs",
+  "States": {
+    "DiscoverOcrJobs": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${ocr_job_reader_lambda_arn}",
+        "Payload.$": "$"
+      },
+      "ResultSelector": {
+        "items.$": "$.Payload.items",
+        "summary.$": "$.Payload.summary"
+      },
+      "ResultPath": "$.ocrDiscovery",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Next": "HasOcrJobs"
+    },
+    "HasOcrJobs": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.ocrDiscovery.items[0]",
+          "IsPresent": true,
+          "Next": "ProcessOcrJobs"
+        }
+      ],
+      "Default": "NoPendingOcrJobs"
+    },
+    "ProcessOcrJobs": {
+      "Type": "Map",
+      "ItemsPath": "$.ocrDiscovery.items",
+      "MaxConcurrency": 5,
+      "ItemSelector": {
+        "job.$": "$$.Map.Item.Value",
+        "execution_id.$": "$$.Execution.Id"
+      },
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "RunOcrProcessor",
+        "States": {
+          "RunOcrProcessor": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Parameters": {
+              "FunctionName": "${ocr_document_processor_lambda_arn}",
+              "Payload.$": "$"
+            },
+            "Retry": [
+              {
+                "ErrorEquals": [
+                  "Lambda.ServiceException",
+                  "Lambda.AWSLambdaException",
+                  "Lambda.SdkClientException"
+                ],
+                "IntervalSeconds": 2,
+                "MaxAttempts": 3,
+                "BackoffRate": 2.0
+              }
+            ],
+            "End": true
+          }
+        }
+      },
+      "ResultPath": null,
+      "Next": "OcrPipelineComplete"
+    },
+    "NoPendingOcrJobs": {
+      "Type": "Succeed"
+    },
+    "OcrPipelineComplete": {
+      "Type": "Succeed"
+    }
+  }
+}

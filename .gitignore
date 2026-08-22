@@ -23,6 +23,16 @@ out/
 # misc
 .DS_Store
 *.pem
+__pycache__/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
+crash.*.log
 
 # debug
 npm-debug.log*

@@ -1,0 +1,55 @@
+# ECR repositories are prepared for future container-based OCR packaging.
+# The current placeholder Lambdas are deployed as ZIP archives from services/.
+
+locals {
+  ocr_ecr_repositories = {
+    job_reader         = "ocr-job-reader"
+    document_processor = "ocr-document-processor"
+  }
+}
+
+resource "aws_ecr_repository" "ocr" {
+  for_each = local.ocr_ecr_repositories
+
+  name                 = "${local.name_prefix}-${each.value}"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  encryption_configuration {
+    encryption_type = "AES256"
+  }
+
+  tags = merge(
+    local.common_tags,
+    {
+      Component = each.key
+      Name      = "${local.name_prefix}-${each.value}"
+    },
+  )
+}
+
+resource "aws_ecr_lifecycle_policy" "ocr" {
+  for_each = aws_ecr_repository.ocr
+
+  repository = each.value.name
+
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description  = "Keep the last 3 images"
+        selection = {
+          tagStatus   = "any"
+          countType   = "imageCountMoreThan"
+          countNumber = 3
+        }
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
+}

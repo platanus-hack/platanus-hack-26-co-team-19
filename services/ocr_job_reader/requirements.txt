@@ -1,0 +1,2 @@
+# No third-party dependencies yet.
+# Pin PostgreSQL and OCR-related dependencies here when this placeholder is implemented.
