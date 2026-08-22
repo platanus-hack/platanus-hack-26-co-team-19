@@ -13,6 +13,9 @@ locals {
   ocr_job_reader_function_name         = "${local.name_prefix}-ocr-job-reader"
   ocr_document_processor_function_name = "${local.name_prefix}-ocr-document-processor"
   ocr_state_machine_name               = "${local.name_prefix}-ocr-pipeline"
+  judge_profile_reader_function_name    = "${local.name_prefix}-judge-profile-reader"
+  judge_profile_processor_function_name = "${local.name_prefix}-judge-profile-processor"
+  judge_profile_state_machine_name      = "${local.name_prefix}-judge-profile-pipeline"
   postgres_secret_name                 = coalesce(var.postgres_secret_name, "${local.name_prefix}/postgres")
   deepseek_secret_name                 = coalesce(var.deepseek_secret_name, "${local.name_prefix}/deepseek")
   legal_documents_bucket_name = coalesce(

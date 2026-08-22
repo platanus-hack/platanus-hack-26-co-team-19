@@ -1,0 +1,89 @@
+{
+  "Comment": "Orchestrates judge profile discovery and per-judge profile generation.",
+  "StartAt": "DiscoverJudges",
+  "States": {
+    "DiscoverJudges": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${judge_profile_reader_lambda_arn}",
+        "Payload.$": "$"
+      },
+      "ResultSelector": {
+        "items.$": "$.Payload.items",
+        "summary.$": "$.Payload.summary"
+      },
+      "ResultPath": "$.judgeDiscovery",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Next": "HasJudgesToProcess"
+    },
+    "HasJudgesToProcess": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.judgeDiscovery.items[0]",
+          "IsPresent": true,
+          "Next": "ProcessJudgeProfiles"
+        }
+      ],
+      "Default": "NoJudgesToProcess"
+    },
+    "ProcessJudgeProfiles": {
+      "Type": "Map",
+      "ItemsPath": "$.judgeDiscovery.items",
+      "MaxConcurrency": 3,
+      "ItemSelector": {
+        "job.$": "$$.Map.Item.Value",
+        "execution_id.$": "$$.Execution.Id"
+      },
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "RunJudgeProfileProcessor",
+        "States": {
+          "RunJudgeProfileProcessor": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Parameters": {
+              "FunctionName": "${judge_profile_processor_lambda_arn}",
+              "Payload.$": "$"
+            },
+            "Retry": [
+              {
+                "ErrorEquals": [
+                  "Lambda.ServiceException",
+                  "Lambda.AWSLambdaException",
+                  "Lambda.SdkClientException"
+                ],
+                "IntervalSeconds": 5,
+                "MaxAttempts": 2,
+                "BackoffRate": 2.0
+              }
+            ],
+            "End": true
+          }
+        }
+      },
+      "ResultPath": null,
+      "Next": "JudgeProfilePipelineComplete"
+    },
+    "NoJudgesToProcess": {
+      "Type": "Succeed"
+    },
+    "JudgeProfilePipelineComplete": {
+      "Type": "Succeed"
+    }
+  }
+}

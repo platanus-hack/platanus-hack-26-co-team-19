@@ -59,3 +59,15 @@ output "ocr_document_processor_image_uri" {
   description = "Immutable ECR image URI selected for the native LiteParse OCR processor."
   value       = "${aws_ecr_repository.ocr["document_processor"].repository_url}@${data.aws_ecr_image.ocr_document_processor.image_digest}"
 }
+
+output "judge_ecr_repository_urls" {
+  description = "ECR repositories used by the judge profile Lambda container images."
+  value = {
+    for name, repository in aws_ecr_repository.judge : name => repository.repository_url
+  }
+}
+
+output "judge_profile_pipeline_arn" {
+  description = "ARN of the judge profile Step Functions state machine."
+  value       = aws_sfn_state_machine.judge_profile_pipeline.arn
+}
