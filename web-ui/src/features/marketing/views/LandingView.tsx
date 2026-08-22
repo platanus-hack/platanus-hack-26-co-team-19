@@ -1,45 +1,90 @@
-import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import {
+	sampleLawyers,
+	siteCopy,
+	stats,
+} from "@/features/design-variants/data/copy";
 import { MarketingNavbar } from "../components/MarketingNavbar";
 
 export default function LandingView() {
 	return (
-		<div className="flex min-h-svh flex-col">
+		<div className="flex min-h-svh flex-col bg-background text-foreground">
 			<MarketingNavbar />
-			<main className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center gap-12 px-4 py-16 md:flex-row md:items-center md:justify-between">
-				<div className="flex max-w-xl flex-col">
-					<p className="text-sm text-muted-foreground">deley.pe</p>
-					<h1 className="mt-2 text-4xl font-semibold tracking-tight sm:text-5xl">
-						Métricas de abogados a partir de casos reales
-					</h1>
-					<p className="mt-4 text-muted-foreground">
-						El desempeño se ve en el historial de casos, no en la reputación
-						informal. deley.pe resume volumen, resultados y tiempos para
-						estudios y coordinadores con acceso autenticado.
-					</p>
-					<div className="mt-8 flex flex-wrap gap-3">
-						<Button asChild>
-							<Link href="/dashboard">Empezar</Link>
-						</Button>
-						<Button asChild variant="outline">
-							<Link href="/abogados">Buscar abogados</Link>
-						</Button>
+			<div className="mx-auto max-w-3xl px-6 py-16 text-center">
+				<p className="text-[10px] tracking-[0.5em] text-accent uppercase">
+					Estudio
+				</p>
+				<div className="mx-auto mt-6 h-px w-24 bg-accent" />
+				<p className="mt-6 font-serif text-5xl">{siteCopy.brand}</p>
+				<nav className="mt-8 flex justify-center gap-8 text-xs tracking-[0.25em] uppercase">
+					<Link href="/abogados">Directorio</Link>
+					<Link href="/sign-in">Ingreso</Link>
+				</nav>
+				<h1 className="mt-16 font-serif text-4xl leading-snug font-normal sm:text-5xl">
+					{siteCopy.headline}
+				</h1>
+				<p className="mx-auto mt-8 max-w-xl text-sm leading-7 text-muted-foreground">
+					{siteCopy.lead}
+				</p>
+				<div className="mt-10 flex justify-center gap-4">
+					<Link
+						href="/abogados"
+						className="border border-accent bg-primary px-8 py-3 text-xs tracking-[0.2em] text-primary-foreground uppercase"
+					>
+						{siteCopy.ctaPrimary}
+					</Link>
+					<Link
+						href="/sign-in"
+						className="border border-accent px-8 py-3 text-xs tracking-[0.2em] uppercase"
+					>
+						{siteCopy.ctaSecondary}
+					</Link>
+				</div>
+			</div>
+			<section className="border-y border-accent/40 bg-primary text-primary-foreground">
+				<div className="mx-auto grid max-w-4xl gap-10 px-6 py-16 md:grid-cols-3">
+					{[
+						[siteCopy.privacyTitle, siteCopy.privacy],
+						[siteCopy.trustTitle, siteCopy.trust],
+						[siteCopy.hierarchyTitle, siteCopy.hierarchy],
+					].map(([title, body]) => (
+						<article key={title}>
+							<div className="mx-auto mb-4 h-px w-8 bg-accent" />
+							<h2 className="font-serif text-xl font-normal">{title}</h2>
+							<p className="mt-3 text-sm leading-relaxed text-[#d5d0c4]">
+								{body}
+							</p>
+						</article>
+					))}
+				</div>
+			</section>
+			<section className="mx-auto grid max-w-4xl grid-cols-2 gap-8 px-6 py-16 sm:grid-cols-4">
+				{stats.map((item) => (
+					<div key={item.label} className="text-center">
+						<p className="font-serif text-3xl text-accent">{item.value}</p>
+						<p className="mt-2 text-[10px] tracking-[0.2em] uppercase">
+							{item.label}
+						</p>
 					</div>
-				</div>
-				<div className="shrink-0">
-					<Image
-						src="/deley-pe-logo.png"
-						alt="deley.pe"
-						width={320}
-						height={320}
-						priority
-						className="rounded-2xl border bg-background shadow-sm"
-					/>
-				</div>
-			</main>
-			<footer className="border-t py-6 text-center text-sm text-muted-foreground">
-				© {new Date().getFullYear()} deley.pe. Todos los derechos reservados.
+				))}
+			</section>
+			<ul className="mx-auto max-w-2xl space-y-4 px-6 pb-20">
+				{sampleLawyers.map((lawyer) => (
+					<li key={lawyer.slug} className="border border-accent/50">
+						<Link
+							href={`/abogados/${lawyer.slug}`}
+							className="block px-6 py-5 text-center"
+						>
+							<p className="font-serif text-xl">{lawyer.name}</p>
+							<p className="mt-1 text-xs tracking-[0.2em] text-accent uppercase">
+								{lawyer.materia} · {lawyer.sede}
+							</p>
+						</Link>
+					</li>
+				))}
+			</ul>
+			<footer className="pb-12 text-center text-[10px] tracking-[0.25em] text-accent uppercase">
+				{siteCopy.footer}
 			</footer>
 		</div>
 	);

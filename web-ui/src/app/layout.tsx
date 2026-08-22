@@ -1,13 +1,19 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Libre_Baskerville, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TRPCReactProvider } from "@/trpc/client";
 
-const geistSans = Geist({
-	variable: "--font-geist-sans",
+const sourceSans = Source_Sans_3({
+	variable: "--font-source-sans",
+	subsets: ["latin"],
+});
+
+const libreBaskerville = Libre_Baskerville({
+	weight: ["400", "700"],
+	variable: "--font-libre-baskerville",
 	subsets: ["latin"],
 });
 
@@ -29,7 +35,7 @@ export default function RootLayout({
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+				className={`${sourceSans.variable} ${libreBaskerville.variable} ${geistMono.variable} antialiased`}
 			>
 				<ThemeProvider
 					attribute="class"

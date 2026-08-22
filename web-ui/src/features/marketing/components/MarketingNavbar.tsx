@@ -10,7 +10,10 @@ import { cn } from "@/lib/utils";
 const links = [
 	{ href: "/", label: "Home" },
 	{ href: "/abogados", label: "Buscar" },
+	{ href: "/variantes", label: "Variantes" },
+	{ href: "/dashboard/chat", label: "Chat" },
 	{ href: "/prueba", label: "Prueba MCP" },
+	{ href: "/docs", label: "Docs" },
 	{ href: "/about", label: "About" },
 	{ href: "/contact", label: "Contact" },
 ];
@@ -19,18 +22,18 @@ export function MarketingNavbar() {
 	const pathname = usePathname();
 
 	return (
-		<header className="border-b bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/60 sticky top-0 z-50">
+		<header className="sticky top-0 z-50 border-b border-accent/40 bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/60">
 			<div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4">
 				<Link
 					href="/"
-					className="flex items-center gap-2 font-semibold tracking-tight"
+					className="flex items-center gap-2 font-serif tracking-[0.15em]"
 				>
 					<Image
 						src="/deley-pe-logo.png"
 						alt=""
 						width={28}
 						height={28}
-						className="size-7 rounded-md"
+						className="size-7"
 					/>
 					deley.pe
 				</Link>
@@ -40,11 +43,11 @@ export function MarketingNavbar() {
 							key={link.href}
 							href={link.href}
 							className={cn(
-								"rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground",
+								"px-3 py-2 text-[10px] tracking-[0.2em] text-muted-foreground uppercase transition-colors hover:text-foreground",
 								(link.href === "/"
 									? pathname === "/"
 									: pathname.startsWith(link.href)) &&
-									"font-medium text-foreground",
+									"font-medium text-accent",
 							)}
 						>
 							{link.label}

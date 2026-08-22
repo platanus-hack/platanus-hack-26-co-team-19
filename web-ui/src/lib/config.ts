@@ -25,6 +25,11 @@ const envSchema = z.object({
 	MINIO_BROWSER_REDIRECT_URL: z.string().optional(),
 	MINIO_REGION: z.string(),
 	MINIO_BUCKET_NAME: z.string(),
+
+	DEEPSEEK_API_KEY: z.string().optional(),
+	DEEPSEEK_MODEL: z.string().optional().default("deepseek-v4-pro"),
+	MCP_SERVER_URL: z.string().optional().default("http://localhost:3333/mcp"),
+	AMIN_EMAILS: z.string().optional().default(""),
 });
 
 // Parse and validate
@@ -55,6 +60,13 @@ const config = {
 		region: parsedEnv.MINIO_REGION || "us-east-1",
 		bucketName: parsedEnv.MINIO_BUCKET_NAME,
 	},
+
+	deepseekApiKey: parsedEnv.DEEPSEEK_API_KEY,
+	deepseekModel: parsedEnv.DEEPSEEK_MODEL,
+	mcpServerUrl: parsedEnv.MCP_SERVER_URL,
+	adminEmails: parsedEnv.AMIN_EMAILS.split(",")
+		.map((email) => email.trim().toLowerCase())
+		.filter(Boolean),
 };
 
 export default config;

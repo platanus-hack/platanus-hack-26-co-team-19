@@ -1,13 +1,10 @@
 "use client";
 
-import {
-	AudioWaveform,
-	Command,
-	type Frame,
-	GalleryVerticalEnd,
-	SquareTerminal,
-} from "lucide-react";
+import { type Frame, SquareTerminal } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type * as React from "react";
+import { Suspense } from "react";
 import { Separator } from "@/components/ui/separator";
 import {
 	Sidebar,
@@ -16,30 +13,12 @@ import {
 	SidebarHeader,
 	SidebarRail,
 } from "@/components/ui/sidebar";
+import ChatSidebarHistory from "@/features/chat/components/ChatSidebarHistory";
 import { NavMain } from "@/features/dashboard/components/nav-main";
 import { NavProjects } from "@/features/dashboard/components/nav-projects";
 import { NavUser } from "@/features/dashboard/components/nav-user";
-import { TeamSwitcher } from "@/features/dashboard/components/team-switcher";
 
-// This is sample data.
 const data = {
-	teams: [
-		{
-			name: "Acme Inc",
-			logo: GalleryVerticalEnd,
-			plan: "Enterprise",
-		},
-		{
-			name: "Acme Corp.",
-			logo: AudioWaveform,
-			plan: "Startup",
-		},
-		{
-			name: "Evil Corp.",
-			logo: Command,
-			plan: "Free",
-		},
-	],
 	navMain: [
 		{
 			title: "Dashboard",
@@ -59,6 +38,10 @@ const data = {
 					title: "Contactos",
 					url: "/dashboard/contacts",
 				},
+				{
+					title: "Chat",
+					url: "/dashboard/chat",
+				},
 			],
 		},
 	],
@@ -70,19 +53,35 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+	const pathname = usePathname();
+	const isChat = pathname.startsWith("/dashboard/chat");
+
 	return (
 		<Sidebar collapsible="icon" {...props}>
 			<SidebarHeader>
-				<TeamSwitcher teams={data.teams} />
+				<Link
+					href="/"
+					className="px-2 py-1.5 font-serif text-sm tracking-[0.2em]"
+				>
+					deley.pe
+				</Link>
 			</SidebarHeader>
 			<div className="px-4">
 				<Separator />
 			</div>
 			<SidebarContent>
-				<NavMain items={data.navMain} />
-				{data.projects.length > 0 ? (
-					<NavProjects projects={data.projects} />
-				) : null}
+				{isChat ? (
+					<Suspense fallback={null}>
+						<ChatSidebarHistory />
+					</Suspense>
+				) : (
+					<>
+						<NavMain items={data.navMain} />
+						{data.projects.length > 0 ? (
+							<NavProjects projects={data.projects} />
+						) : null}
+					</>
+				)}
 			</SidebarContent>
 			<SidebarFooter>
 				<NavUser />

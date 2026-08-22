@@ -4,8 +4,6 @@ import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 
 export async function proxy(request: NextRequest) {
-	console.log("✅ middleware disparado en:", request.nextUrl.pathname);
-
 	const { pathname } = request.nextUrl;
 
 	const isAuthRoute = pathname === "/sign-in" || pathname === "/sign-up";
@@ -27,10 +25,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-	// Aplica el middleware solo a estas rutas
-	matcher: [
-		"/sign-in",
-		"/sign-up",
-		"/dashboard/:path*", // cubre /dashboard y subrutas
-	],
+	matcher: ["/sign-in", "/sign-up", "/dashboard/:path*"],
 };
