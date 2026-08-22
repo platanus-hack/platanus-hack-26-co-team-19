@@ -14,8 +14,8 @@ from services.s3_service import download_pdf
 from services.secrets_service import get_json_secret
 
 
-def handler(event: dict[str, Any], context: Any) -> dict[str, str]:
-    """Extract and persist structured data for the Step Functions Map item."""
+def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Extract validated judicial analysis for one Step Functions Map item."""
     del context
 
     job = event.get("job")
@@ -53,13 +53,14 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, str]:
             model=os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-flash"),
         ).extract_providencia(ocr_text)
         extraction = ProvidenciaExtraction.model_validate(llm_output)
+        analysis = extraction.model_dump(mode="json")
 
         completed_status = os.environ.get("PROVIDENCIA_COMPLETE_STATUS", "COMPLETE")
         update_providencia(
             postgres_settings=postgres_settings,
             providencia_id=str(providencia_id),
-            ponente=extraction.ponente,
             completed_status=completed_status,
+            analysis=analysis,
         )
     finally:
         if pdf_path is not None:
@@ -69,5 +70,5 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, str]:
         "id": str(providencia_id),
         "s3_key": s3_key,
         "status": completed_status,
-        "ponente": extraction.ponente,
+        "analysis": analysis,
     }

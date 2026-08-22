@@ -1,7 +1,8 @@
-"""PostgreSQL persistence for structured OCR results."""
+"""PostgreSQL completion persistence for structured OCR results."""
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 REQUIRED_POSTGRES_SETTINGS = (
@@ -18,10 +19,10 @@ def update_providencia(
     *,
     postgres_settings: dict[str, Any],
     providencia_id: str,
-    ponente: str,
     completed_status: str,
+    analysis: dict[str, Any],
 ) -> None:
-    """Persist the validated ponente and mark the source row as completed."""
+    """Mark the source row completed and persist the LLM analysis fields."""
     import psycopg
 
     missing_settings = [
@@ -32,6 +33,10 @@ def update_providencia(
             "PostgreSQL secret is missing required settings: "
             + ", ".join(missing_settings)
         )
+
+    # argumentos_clave is a list → store as JSON string in TEXT column
+    argumentos_clave = analysis.get("argumentos_clave", [])
+    argumentos_clave_json = json.dumps(argumentos_clave, ensure_ascii=False)
 
     with psycopg.connect(
         host=postgres_settings["POSTGRES_HOST"],
@@ -46,11 +51,24 @@ def update_providencia(
             cursor.execute(
                 """
                 UPDATE corte.providencias
-                SET ponente = %s,
-                    status = %s
+                SET
+                    status                = %s,
+                    favorecido            = %s,
+                    argumentos_clave      = %s,
+                    citas_jurisprudencia  = %s,
+                    tono                  = %s,
+                    observacion           = %s
                 WHERE id = %s
                 """,
-                (ponente, completed_status, providencia_id),
+                (
+                    completed_status,
+                    analysis.get("favorecido"),
+                    argumentos_clave_json,
+                    analysis.get("citas_jurisprudencia"),
+                    analysis.get("tono"),
+                    analysis.get("observacion"),
+                    providencia_id,
+                ),
             )
             if cursor.rowcount != 1:
                 raise LookupError(
