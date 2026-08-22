@@ -1,24 +1,23 @@
-"""Validated structured output returned by DeepSeek for one providencia."""
+"""Validated judicial-analysis output returned by DeepSeek for one providencia."""
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from typing import Annotated, Literal
+
+from pydantic import BaseModel, ConfigDict, Field
+
+Favorecido = Literal["estado", "ciudadano", "mixto", "indeterminado"]
+Tono = Literal["garantista", "restrictivo", "neutro"]
+SpanishSentence = Annotated[str, Field(min_length=1, max_length=1_000)]
 
 
 class ProvidenciaExtraction(BaseModel):
-    """Fields extracted from a legal providencia before persistence."""
+    """Validated analysis extracted from a legal providencia before completion."""
 
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
-    ponente: str = Field(min_length=1, max_length=500)
-    radicado: str | None = Field(default=None, max_length=500)
-    temas: list[str] = Field(default_factory=list, max_length=20)
-    sentido: str | None = Field(default=None, max_length=500)
-    resumen: str | None = Field(default=None, max_length=4000)
-
-    @field_validator("ponente")
-    @classmethod
-    def require_identified_ponente(cls, value: str) -> str:
-        if not value.strip():
-            raise ValueError("ponente must be explicitly identified in the document")
-        return value
+    favorecido: Favorecido
+    argumentos_clave: list[SpanishSentence] = Field(max_length=3)
+    citas_jurisprudencia: int = Field(ge=0)
+    tono: Tono
+    observacion: SpanishSentence

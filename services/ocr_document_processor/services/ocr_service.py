@@ -11,6 +11,7 @@ def extract_pdf_text(
     *,
     language: str,
     dpi: int = 300,
+    max_pages: int = 2,
     timeout_seconds: int = 240,
 ) -> str:
     """Run LiteParse OCR and return non-empty text for a temporary PDF."""
@@ -24,6 +25,8 @@ def extract_pdf_text(
         language,
         "--dpi",
         str(dpi),
+        "--max-pages",
+        str(max_pages),
         "--quiet",
     ]
 
