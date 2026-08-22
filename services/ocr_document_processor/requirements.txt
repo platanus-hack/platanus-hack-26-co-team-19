@@ -1,0 +1,2 @@
+# No third-party dependencies yet.
+# Pin OCR, DeepSeek client, and PostgreSQL dependencies here when implemented.
