@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 const links = [
 	{ href: "/", label: "Home" },
 	{ href: "/abogados", label: "Buscar" },
+	{ href: "/prueba", label: "Prueba MCP" },
 	{ href: "/about", label: "About" },
 	{ href: "/contact", label: "Contact" },
 ];
@@ -40,9 +41,10 @@ export function MarketingNavbar() {
 							href={link.href}
 							className={cn(
 								"rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground",
-								(link.href === "/abogados"
-									? pathname.startsWith("/abogados")
-									: pathname === link.href) && "font-medium text-foreground",
+								(link.href === "/"
+									? pathname === "/"
+									: pathname.startsWith(link.href)) &&
+									"font-medium text-foreground",
 							)}
 						>
 							{link.label}
