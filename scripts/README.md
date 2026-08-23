@@ -54,6 +54,30 @@ terraform -chdir=terraform/main plan \
 
 No reutilices tags existentes. Usa tags nuevos y pásalos con `-var` cuando actualices cualquiera de las imágenes. El primer cambio desde ZIP a `package_type = "Image"` reemplaza ambas Lambdas existentes.
 
+## Imagen Docker de scrapping-samai
+
+El scraper corre en **una sola EC2** con Elastic IP. FastAPI y Chrome viven en esa máquina; no hay ALB ni otra instancia. Los clientes llaman `http://<eip>:8000` directo. Primero aplica Terraform para crear el repositorio ECR (y esa VM). Luego sube la imagen; el `user-data` de **esa misma** instancia reintenta el `docker pull`.
+
+```bash
+source .env
+bash scripts/build_and_push_scrapping_samai.sh scraper-v1
+terraform -chdir=terraform/main apply \
+  -var='scraper_image_tag=scraper-v1'
+```
+
+La URL e IP salen en `scraper_http_url` y `scraper_public_ip`. El bearer token está en Secrets Manager (`scraper_token_secret_name`); no se imprime.
+
+```bash
+TOKEN="$(aws secretsmanager get-secret-value \
+  --secret-id "$(terraform -chdir=terraform/main output -raw scraper_token_secret_name)" \
+  --query SecretString --output text)"
+curl -s "$(terraform -chdir=terraform/main output -raw scraper_http_url)/health"
+curl -s -X POST "$(terraform -chdir=terraform/main output -raw scraper_http_url)/jobs" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"paginas":10,"desde":1}'
+```
+
 ## Publicar DeepSeek
 
 Agrega `DEEPSEEK_API_KEY` solo al `.env` local ignorado por Git. Después de aplicar Terraform y crear el contenedor del secreto, publica el valor:

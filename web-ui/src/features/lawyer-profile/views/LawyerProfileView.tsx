@@ -27,7 +27,7 @@ export default function LawyerProfileView({ profile }: LawyerProfileViewProps) {
 				</div>
 			</main>
 			<footer className="border-t py-6 text-center text-sm text-muted-foreground">
-				© {new Date().getFullYear()} deley.pe. Todos los derechos reservados.
+				© {new Date().getFullYear()} deley.com. Todos los derechos reservados.
 			</footer>
 		</div>
 	);

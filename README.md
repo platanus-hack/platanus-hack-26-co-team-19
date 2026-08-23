@@ -1,8 +1,8 @@
-# deley.pe
+# deley.com
 
 Track: Access · Platanus Hack 26 Bogotá · team-19
 
-<img src="./project-logo.png" alt="deley.pe" width="200" />
+<img src="./project-logo.png" alt="deley.com" width="200" />
 
 Métricas de abogados a partir del historial de casos. Acceso autenticado al panel (Next.js, Better Auth, Prisma, tRPC, PostgreSQL).
 

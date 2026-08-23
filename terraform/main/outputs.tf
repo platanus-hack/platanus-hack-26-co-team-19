@@ -71,3 +71,23 @@ output "judge_profile_pipeline_arn" {
   description = "ARN of the judge profile Step Functions state machine."
   value       = aws_sfn_state_machine.judge_profile_pipeline.arn
 }
+
+output "scraper_ecr_repository_url" {
+  description = "ECR repository URL for the scrapping-samai container image."
+  value       = aws_ecr_repository.scraper.repository_url
+}
+
+output "scraper_public_ip" {
+  description = "Elastic IP attached to the single scrapping-samai EC2 instance (no load balancer)."
+  value       = aws_eip.scraper.public_ip
+}
+
+output "scraper_http_url" {
+  description = "Direct HTTP URL of the scraper API on that EC2: http://<eip>:8000"
+  value       = "http://${aws_eip.scraper.public_ip}:8000"
+}
+
+output "scraper_token_secret_name" {
+  description = "Secrets Manager name of the bearer token for the scraper API."
+  value       = aws_secretsmanager_secret.scraper_token.name
+}
