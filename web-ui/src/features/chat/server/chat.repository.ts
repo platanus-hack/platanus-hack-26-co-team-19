@@ -199,33 +199,22 @@ export const upsertMessages = async (
 		return;
 	}
 
-	const stored = await db.chatMessage.findMany({
-		where: { conversationId: id },
-		select: { id: true },
-	});
-	const storedIds = new Set(stored.map((row) => row.id));
 	const createdAtBase = Date.now();
 
 	await db.$transaction(async (tx) => {
 		for (const [index, message] of uniqueMessages.entries()) {
 			const parts = toJsonParts(message.parts);
-			if (storedIds.has(message.id)) {
-				await tx.chatMessage.update({
-					where: { id: message.id },
-					data: { role: message.role, parts },
-				});
-				continue;
-			}
-			await tx.chatMessage.create({
-				data: {
+			await tx.chatMessage.upsert({
+				where: { id: message.id },
+				create: {
 					id: message.id,
 					conversationId: id,
 					role: message.role,
 					parts,
 					createdAt: new Date(createdAtBase + index),
 				},
+				update: { role: message.role, parts },
 			});
-			storedIds.add(message.id);
 		}
 
 		const shouldSetTitle =

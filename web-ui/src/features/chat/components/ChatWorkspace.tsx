@@ -55,6 +55,7 @@ const ChatWorkspace = () => {
 				messages={toUiMessages(conversation.messages)}
 				generationStatus={conversation.generationStatus}
 				generationError={conversation.generationError}
+				updatedAt={conversation.updatedAt}
 			/>
 		</div>
 	);

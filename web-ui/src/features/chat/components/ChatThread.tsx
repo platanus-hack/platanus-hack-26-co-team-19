@@ -2,7 +2,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import type { UIMessage } from "ai";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,11 +11,14 @@ import ChatMessageParts from "@/features/chat/components/ChatMessageParts";
 import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
 
+const STUCK_GENERATION_MS = 3 * 60 * 1000;
+
 type ChatThreadProps = {
 	conversationId: string;
 	messages: UIMessage[];
 	generationStatus: "idle" | "running" | "error";
 	generationError: string | null;
+	updatedAt: Date | string;
 };
 
 const ChatThread = ({
@@ -23,11 +26,13 @@ const ChatThread = ({
 	messages,
 	generationStatus,
 	generationError,
+	updatedAt,
 }: ChatThreadProps) => {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
 	const [input, setInput] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [pendingMessages, setPendingMessages] = useState<UIMessage[]>([]);
 
 	const revalidateChat = useCallback(() => {
 		void queryClient.invalidateQueries({
@@ -38,20 +43,42 @@ const ChatThread = ({
 		});
 	}, [conversationId, queryClient, trpc]);
 
-	const isBusy = generationStatus === "running" || isSubmitting;
-	const lastAssistantId = [...messages]
-		.reverse()
-		.find((message) => message.role === "assistant")?.id;
-	const hasAssistantReply = messages.some(
-		(message) =>
-			message.role === "assistant" &&
-			message.parts.some(
-				(part) =>
-					(part.type === "text" && "text" in part && part.text.trim()) ||
-					part.type === "reasoning" ||
-					part.type === "dynamic-tool" ||
-					part.type.startsWith("tool-"),
+	useEffect(() => {
+		setPendingMessages((current) =>
+			current.filter(
+				(pending) => !messages.some((message) => message.id === pending.id),
 			),
+		);
+	}, [messages]);
+
+	const updatedAtMs = new Date(updatedAt).getTime();
+	const isStuckRunning =
+		generationStatus === "running" &&
+		Number.isFinite(updatedAtMs) &&
+		Date.now() - updatedAtMs > STUCK_GENERATION_MS;
+
+	const isBusy =
+		isSubmitting || (generationStatus === "running" && !isStuckRunning);
+
+	const displayedMessages = useMemo(() => {
+		const knownIds = new Set(messages.map((message) => message.id));
+		return [
+			...messages,
+			...pendingMessages.filter((message) => !knownIds.has(message.id)),
+		];
+	}, [messages, pendingMessages]);
+
+	const lastAssistant = [...displayedMessages]
+		.reverse()
+		.find((message) => message.role === "assistant");
+	const lastAssistantHasContent = Boolean(
+		lastAssistant?.parts.some(
+			(part) =>
+				(part.type === "text" && "text" in part && part.text.trim()) ||
+				part.type === "reasoning" ||
+				part.type === "dynamic-tool" ||
+				part.type.startsWith("tool-"),
+		),
 	);
 	const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -60,7 +87,7 @@ const ChatThread = ({
 		if (isBusy) {
 			bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
 		}
-	}, [isBusy, messages]);
+	}, [isBusy, displayedMessages]);
 
 	const send = async (text: string) => {
 		if (!text || isBusy) {
@@ -72,6 +99,7 @@ const ChatThread = ({
 			role: "user",
 			parts: [{ type: "text", text }],
 		};
+		setPendingMessages((current) => [...current, userMessage]);
 		try {
 			const response = await fetch("/api/chat", {
 				method: "POST",
@@ -92,6 +120,9 @@ const ChatThread = ({
 			}
 			revalidateChat();
 		} catch (err) {
+			setPendingMessages((current) =>
+				current.filter((message) => message.id !== userMessage.id),
+			);
 			toast.error(
 				err instanceof Error ? err.message : "Error al enviar el mensaje",
 			);
@@ -114,13 +145,13 @@ const ChatThread = ({
 		<div className="flex h-full min-h-0 flex-col">
 			<ScrollArea className="min-h-0 flex-1">
 				<div className="flex flex-col gap-4 p-4">
-					{messages.length === 0 ? (
+					{displayedMessages.length === 0 ? (
 						<p className="text-sm text-muted-foreground">
 							Pregunta por providencias, ponentes o votos. El modelo usará el
 							MCP del Consejo de Estado.
 						</p>
 					) : null}
-					{messages.map((message) => (
+					{displayedMessages.map((message) => (
 						<div
 							key={message.id}
 							className={cn(
@@ -138,14 +169,20 @@ const ChatThread = ({
 								hideAssistantTextUntilComplete={
 									isBusy &&
 									message.role === "assistant" &&
-									message.id === lastAssistantId
+									message.id === lastAssistant?.id &&
+									!lastAssistantHasContent
 								}
 							/>
 						</div>
 					))}
-					{generationStatus === "running" && !hasAssistantReply ? (
+					{isBusy && !lastAssistantHasContent ? (
 						<p className="text-sm text-muted-foreground">
 							Preparando respuesta…
+						</p>
+					) : null}
+					{isStuckRunning ? (
+						<p className="text-sm text-destructive">
+							La generación se detuvo. Puedes enviar el mensaje de nuevo.
 						</p>
 					) : null}
 					{generationStatus === "error" && generationError ? (
@@ -156,6 +193,7 @@ const ChatThread = ({
 			</ScrollArea>
 			<form onSubmit={onSubmit} className="border-t p-3">
 				<Textarea
+					autoFocus
 					value={input}
 					onChange={(event) => setInput(event.target.value)}
 					placeholder="Escribe un mensaje…"
