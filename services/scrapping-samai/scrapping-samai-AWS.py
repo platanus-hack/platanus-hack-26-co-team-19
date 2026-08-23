@@ -26,9 +26,9 @@ PG = dict(
     password=os.getenv("PGPASSWORD"),
     options="-c search_path=corte,public"
 )
-BUCKET = os.getenv("S3_BUCKET", "")
-PREFIX = os.getenv("S3_PREFIX", "pdfs/")
-REGION = os.getenv("AWS_REGION", "us-east-1")
+BUCKET = os.getenv("S3_BUCKET")
+PREFIX = os.getenv("S3_PREFIX")
+REGION = os.getenv("AWS_REGION")
 LOCAL = os.path.abspath("pdfs")
 
 URL = "https://samai.consejodeestado.gov.co/TitulacionRelatoria/BuscadorProvidenciasTituladas.aspx"
@@ -61,15 +61,6 @@ def limpio(e):
 def t(s, n, i):
     return limpio(s.find(id=f"{P}{n}_{i}"))
 
-
-def fecha(txt):
-    m = re.search(r"(\d{1,2})\s+de\s+(\w+)\s+de\s+(\d{4})", txt or "", re.I)
-    if not m:
-        return None
-    mes = MESES.get(m.group(2).lower())
-    return f"{m.group(3)}-{mes:02d}-{int(m.group(1)):02d}" if mes else None
-
-
 def clasifica(tipo, actuacion):
     tp, a = (tipo or "").upper(), (actuacion or "").upper()
     if "SALVAMENTO" in tp:
@@ -84,6 +75,17 @@ def clasifica(tipo, actuacion):
         if k in a:
             return doc, "FAVORABLE"
     return doc, None
+
+
+def fecha(txt):
+    m = re.search(r"(\d{1,2})\s+de\s+(\w+)\s+de\s+(\d{4})", txt or "", re.I)
+    if not m:
+        return None
+    mes = MESES.get(m.group(2).lower())
+    return f"{m.group(3)}-{mes:02d}-{int(m.group(1)):02d}" if mes else None
+
+
+
 
 def ir_a_pagina(d, n, timeout=60):
 
