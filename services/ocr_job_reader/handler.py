@@ -10,7 +10,7 @@ import boto3
 import psycopg
 from psycopg.rows import dict_row
 
-MAX_BATCH_SIZE = 40
+MAX_BATCH_SIZE = 10
 INCOMPLETE_STATUS = "INCOMPLETE"
 REQUIRED_POSTGRES_SETTINGS = (
     "POSTGRES_HOST",

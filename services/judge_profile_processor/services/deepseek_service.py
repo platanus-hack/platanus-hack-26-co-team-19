@@ -1,4 +1,4 @@
-"""DeepSeek V4 Flash client for validated JSON extraction."""
+"""DeepSeek client for judge profile extraction."""
 
 from __future__ import annotations
 
@@ -7,8 +7,6 @@ import time
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
-
-from structured_output import SYSTEM_PROMPT, build_user_prompt
 
 DEEPSEEK_CHAT_COMPLETIONS_URL = "https://api.deepseek.com/chat/completions"
 MAX_RETRIES = 3
@@ -22,17 +20,17 @@ class DeepSeekService:
         self._api_key = api_key
         self._model = model
 
-    def extract_providencia(self, ocr_text: str) -> dict[str, Any]:
-        """Return a JSON object suitable for ProvidenciaExtraction validation."""
+    def extract_judge_profile(self, system_prompt: str, user_prompt: str) -> dict[str, Any]:
+        """Return a JSON object with the judge profile."""
         payload = {
             "model": self._model,
             "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": build_user_prompt(ocr_text)},
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
             ],
             "response_format": {"type": "json_object"},
             "temperature": 0,
-            "max_tokens": 1000,
+            "max_tokens": 2000,
             "thinking": {"type": "disabled"},
         }
 
@@ -40,8 +38,7 @@ class DeepSeekService:
 
         for attempt in range(1, MAX_RETRIES + 1):
             try:
-                result = self._call_api(payload)
-                return result
+                return self._call_api(payload)
             except RuntimeError as error:
                 last_error = error
                 print(f"[DeepSeek] attempt {attempt}/{MAX_RETRIES} failed: {error}")
@@ -64,19 +61,16 @@ class DeepSeekService:
         )
 
         try:
-            with urlopen(request, timeout=60) as response:
+            with urlopen(request, timeout=120) as response:
                 response_payload = json.loads(response.read().decode("utf-8"))
         except HTTPError as error:
             body = error.read().decode("utf-8", errors="replace")
-            raise RuntimeError(
-                f"DeepSeek HTTP {error.code}: {body}"
-            ) from error
+            raise RuntimeError(f"DeepSeek HTTP {error.code}: {body}") from error
         except URLError as error:
             raise RuntimeError(f"DeepSeek network error: {error.reason}") from error
         except json.JSONDecodeError as error:
             raise RuntimeError("DeepSeek returned invalid response JSON") from error
 
-        # Log finish_reason to help debug truncation / empty content
         try:
             finish_reason = response_payload["choices"][0].get("finish_reason")
             print(f"[DeepSeek] finish_reason={finish_reason}")

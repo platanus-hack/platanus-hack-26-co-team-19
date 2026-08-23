@@ -71,7 +71,7 @@ resource "aws_lambda_function" "ocr_document_processor" {
     variables = {
       DEEPSEEK_MODEL              = var.deepseek_model
       DEEPSEEK_SECRET_ARN         = aws_secretsmanager_secret.deepseek.arn
-      LEGAL_DOCUMENTS_BUCKET      = aws_s3_bucket.legal_documents.bucket
+      LEGAL_DOCUMENTS_BUCKET      = "platanus-deleype"
       OCR_LANGUAGE                = "spa"
       POSTGRES_SECRET_ARN         = aws_secretsmanager_secret.postgres.arn
       PROVIDENCIA_COMPLETE_STATUS = var.providencia_complete_status

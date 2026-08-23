@@ -1,8 +1,8 @@
-"""LiteParse CLI integration for PDF OCR."""
+"""LiteParse Python library integration for PDF OCR."""
 
 from __future__ import annotations
 
-import subprocess
+import os
 from pathlib import Path
 
 
@@ -10,41 +10,22 @@ def extract_pdf_text(
     pdf_path: Path,
     *,
     language: str,
-    dpi: int = 300,
     max_pages: int = 2,
-    timeout_seconds: int = 240,
 ) -> str:
-    """Run LiteParse OCR and return non-empty text for a temporary PDF."""
-    command = [
-        "lit",
-        "parse",
-        str(pdf_path),
-        "--format",
-        "text",
-        "--ocr-language",
-        language,
-        "--dpi",
-        str(dpi),
-        "--max-pages",
-        str(max_pages),
-        "--quiet",
-    ]
+    """Parse a PDF with LiteParse and return non-empty plain text."""
+    from liteparse import LiteParse
 
-    try:
-        result = subprocess.run(
-            command,
-            capture_output=True,
-            check=False,
-            text=True,
-            timeout=timeout_seconds,
-        )
-    except subprocess.TimeoutExpired as error:
-        raise RuntimeError("LiteParse OCR timed out") from error
+    parser = LiteParse(
+        output_format="text",
+        ocr_enabled=True,
+        ocr_language=language,
+        max_pages=max_pages,
+        tessdata_path=os.environ.get("TESSDATA_PREFIX", "/opt/tessdata"),
+    )
 
-    if result.returncode != 0:
-        raise RuntimeError("LiteParse OCR failed")
+    result = parser.parse(str(pdf_path))
 
-    text = result.stdout.strip()
+    text = result.text.strip() if result.text else ""
     if not text:
-        raise RuntimeError("LiteParse OCR returned no text")
+        raise RuntimeError("LiteParse returned no text")
     return text

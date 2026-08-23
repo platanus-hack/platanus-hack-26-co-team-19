@@ -48,6 +48,7 @@ def update_providencia(
         connect_timeout=10,
     ) as connection:
         with connection.cursor() as cursor:
+            print(f"[postgres] updating providencia id={providencia_id!r}")
             cursor.execute(
                 """
                 UPDATE corte.providencias
@@ -70,7 +71,8 @@ def update_providencia(
                     providencia_id,
                 ),
             )
+            print(f"[postgres] rowcount={cursor.rowcount}")
             if cursor.rowcount != 1:
                 raise LookupError(
-                    "Expected exactly one corte.providencias row for the supplied id"
+                    f"Expected exactly one corte.providencias row for id={providencia_id!r}, got {cursor.rowcount}"
                 )

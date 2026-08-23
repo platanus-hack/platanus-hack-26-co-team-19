@@ -89,7 +89,7 @@ data "aws_iam_policy_document" "ocr_document_processor_legal_documents_read" {
     actions = [
       "s3:GetObject",
     ]
-    resources = ["${aws_s3_bucket.legal_documents.arn}/*"]
+    resources = ["arn:aws:s3:::platanus-deleype/*"]
   }
 }
 

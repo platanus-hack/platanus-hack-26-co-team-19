@@ -123,6 +123,18 @@ variable "ocr_document_processor_image_tag" {
   default     = "ocr-processor-v2"
 }
 
+variable "judge_profile_reader_image_tag" {
+  description = "Immutable ECR image tag to deploy for the judge profile reader Lambda."
+  type        = string
+  default     = "judge-reader-v1"
+}
+
+variable "judge_profile_processor_image_tag" {
+  description = "Immutable ECR image tag to deploy for the judge profile processor Lambda."
+  type        = string
+  default     = "judge-processor-v1"
+}
+
 variable "scraper_image_tag" {
   description = "ECR image tag pulled by the scrapping-samai EC2 instance."
   type        = string
