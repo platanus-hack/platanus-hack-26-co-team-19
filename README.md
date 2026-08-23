@@ -4,9 +4,7 @@ Track: Access · Platanus Hack 26 Bogotá · team-19
 
 <img src="./project-logo.png" alt="deley.com" width="200" />
 
-Métricas de abogados a partir del historial de casos. Acceso autenticado al panel (Next.js, Better Auth, Prisma, tRPC, PostgreSQL).
-
-Logo generado (aún no aplicado): [deley-pe-logo.png](./deley-pe-logo.png).
+Métricas de magistrados ponentes a partir de providencias del Consejo de Estado. Acceso autenticado al panel (Next.js, Better Auth, Prisma, tRPC, PostgreSQL).
 
 ## Equipo
 
