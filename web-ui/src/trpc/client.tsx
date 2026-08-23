@@ -27,11 +27,10 @@ function getQueryClient() {
 }
 
 function getUrl() {
-	const base = (() => {
-		if (process.env.NEXT_PUBLIC_APP_URL)
-			return `${process.env.NEXT_PUBLIC_APP_URL}`;
-		return "http://localhost:3000";
-	})();
+	if (typeof window !== "undefined") {
+		return "/api/trpc";
+	}
+	const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 	return `${base}/api/trpc`;
 }
 
@@ -52,6 +51,8 @@ export function TRPCReactProvider(
 				httpBatchLink({
 					transformer: superjson,
 					url: getUrl(),
+					fetch: (url, options) =>
+						fetch(url, { ...options, credentials: "include" }),
 				}),
 			],
 		}),

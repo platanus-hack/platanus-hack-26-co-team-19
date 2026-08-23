@@ -13,6 +13,11 @@ const useGetConversation = ({ id }: UseGetConversationProps) => {
 		...trpc.chat.get.queryOptions({ id: id ?? "" }),
 		enabled: Boolean(id),
 		placeholderData: keepPreviousData,
+		refetchInterval: (current) =>
+			current.state.data?.id === id &&
+			current.state.data.generationStatus === "running"
+				? 500
+				: false,
 	});
 
 	const conversation = query.data?.id === id ? query.data : undefined;

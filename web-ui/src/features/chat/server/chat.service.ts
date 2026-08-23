@@ -26,6 +26,21 @@ export const create = async (
 	return chatRepository.create(userId, title ?? "Nueva conversación");
 };
 
+export const setGenerationStatus = async (
+	userId: string,
+	id: string,
+	generationStatus: "idle" | "running" | "error",
+	generationError?: string | null,
+): Promise<void> => {
+	await get(userId, id);
+	await chatRepository.setGenerationStatus(
+		userId,
+		id,
+		generationStatus,
+		generationError,
+	);
+};
+
 export const updateTitle = async (
 	userId: string,
 	id: string,

@@ -17,13 +17,25 @@ const toUiMessages = (
 const ChatWorkspace = () => {
 	const searchParams = useSearchParams();
 	const selectedId = searchParams.get("id");
-	const { conversation, isLoading } = useGetConversation({ id: selectedId });
+	const { conversation, isLoading, error } = useGetConversation({
+		id: selectedId,
+	});
 
 	if (!selectedId) {
 		return (
 			<div className="flex h-[calc(100vh-8rem)] min-h-[28rem] items-center justify-center rounded-lg border text-center text-sm text-muted-foreground">
 				Selecciona o crea una conversación en el menú lateral.
 			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<p className="p-4 text-sm text-destructive">
+				{error instanceof Error
+					? error.message
+					: "No se pudo cargar la conversación"}
+			</p>
 		);
 	}
 
@@ -40,7 +52,9 @@ const ChatWorkspace = () => {
 			<ChatThread
 				key={conversation.id}
 				conversationId={conversation.id}
-				initialMessages={toUiMessages(conversation.messages)}
+				messages={toUiMessages(conversation.messages)}
+				generationStatus={conversation.generationStatus}
+				generationError={conversation.generationError}
 			/>
 		</div>
 	);

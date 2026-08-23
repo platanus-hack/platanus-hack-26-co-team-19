@@ -1,34 +1,55 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
-import type {
-	ChatConversation,
-	ChatConversationWithMessages,
-	ChatMessage,
+import {
+	type ChatConversation,
+	type ChatConversationWithMessages,
+	type ChatMessage,
+	chatGenerationStatusSchema,
 } from "../schemas/chat.schema";
 
 const conversationSelect = {
 	id: true,
 	userId: true,
 	title: true,
+	generationStatus: true,
+	generationError: true,
 	createdAt: true,
 	updatedAt: true,
 } satisfies Prisma.ChatConversationSelect;
 
+const toGenerationStatus = (
+	value: string,
+): ChatConversation["generationStatus"] => {
+	const parsed = chatGenerationStatusSchema.safeParse(value);
+	return parsed.success ? parsed.data : "idle";
+};
+
+const mapConversation = <T extends { generationStatus: string }>(
+	row: T,
+): Omit<T, "generationStatus"> & {
+	generationStatus: ChatConversation["generationStatus"];
+} => ({
+	...row,
+	generationStatus: toGenerationStatus(row.generationStatus),
+});
+
 export const findAllByUser = async (
 	userId: string,
 ): Promise<ChatConversation[]> => {
-	return db.chatConversation.findMany({
-		where: { userId },
-		orderBy: { updatedAt: "desc" },
-		select: conversationSelect,
-	});
+	return db.chatConversation
+		.findMany({
+			where: { userId },
+			orderBy: { updatedAt: "desc" },
+			select: conversationSelect,
+		})
+		.then((rows) => rows.map(mapConversation));
 };
 
 export const findByIdForUser = async (
 	userId: string,
 	id: string,
 ): Promise<ChatConversationWithMessages | null> => {
-	return db.chatConversation.findFirst({
+	const row = await db.chatConversation.findFirst({
 		where: { id, userId },
 		select: {
 			...conversationSelect,
@@ -44,16 +65,38 @@ export const findByIdForUser = async (
 			},
 		},
 	});
+	return row ? mapConversation(row) : null;
 };
 
 export const create = async (
 	userId: string,
 	title: string,
 ): Promise<ChatConversation> => {
-	return db.chatConversation.create({
-		data: { userId, title },
-		select: conversationSelect,
+	return mapConversation(
+		await db.chatConversation.create({
+			data: { userId, title },
+			select: conversationSelect,
+		}),
+	);
+};
+
+export const setGenerationStatus = async (
+	userId: string,
+	id: string,
+	generationStatus: string,
+	generationError?: string | null,
+): Promise<void> => {
+	const result = await db.chatConversation.updateMany({
+		where: { id, userId },
+		data: {
+			generationStatus,
+			generationError: generationError ?? null,
+			updatedAt: new Date(),
+		},
 	});
+	if (result.count === 0) {
+		throw new Error("Conversation not found");
+	}
 };
 
 export const updateTitle = async (
@@ -72,7 +115,7 @@ export const updateTitle = async (
 	if (!row) {
 		throw new Error("Conversation not found");
 	}
-	return row;
+	return mapConversation(row);
 };
 
 const MAX_JSON_CHARS = 400_000;

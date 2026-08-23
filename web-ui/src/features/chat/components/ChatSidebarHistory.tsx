@@ -10,7 +10,7 @@ const ChatSidebarHistory = () => {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const selectedId = searchParams.get("id");
-	const { conversations } = useListConversations();
+	const { conversations, error } = useListConversations();
 	const createConversation = useCreateConversation({
 		onSuccess: (id) => router.push(`/dashboard/chat?id=${id}`),
 	});
@@ -30,6 +30,9 @@ const ChatSidebarHistory = () => {
 			onCreate={() => createConversation.mutate({})}
 			onDelete={(id) => deleteConversation.mutate({ id })}
 			isCreating={createConversation.isPending}
+			errorMessage={
+				error instanceof Error ? error.message : error ? String(error) : null
+			}
 		/>
 	);
 };

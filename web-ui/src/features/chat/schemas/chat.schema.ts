@@ -8,10 +8,14 @@ export const chatMessageSchema = z.object({
 	createdAt: z.date(),
 });
 
+export const chatGenerationStatusSchema = z.enum(["idle", "running", "error"]);
+
 export const chatConversationSchema = z.object({
 	id: z.uuid(),
 	userId: z.string(),
 	title: z.string(),
+	generationStatus: chatGenerationStatusSchema,
+	generationError: z.string().nullable(),
 	createdAt: z.date(),
 	updatedAt: z.date(),
 });

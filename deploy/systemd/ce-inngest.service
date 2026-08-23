@@ -1,0 +1,16 @@
+[Unit]
+Description=Consejo de Estado Inngest Dev Server
+After=network-online.target ce-web-ui.service
+Wants=network-online.target ce-web-ui.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/platanus-hack-26-co-team-19/web-ui
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+ExecStart=/usr/local/bin/inngest dev -u http://127.0.0.1:3000/api/inngest
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target

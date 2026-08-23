@@ -1,9 +1,8 @@
 "use client";
 
-import { useChat } from "@ai-sdk/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { DefaultChatTransport, type UIMessage } from "ai";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { UIMessage } from "ai";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -14,21 +13,21 @@ import { useTRPC } from "@/trpc/client";
 
 type ChatThreadProps = {
 	conversationId: string;
-	initialMessages: UIMessage[];
+	messages: UIMessage[];
+	generationStatus: "idle" | "running" | "error";
+	generationError: string | null;
 };
 
-const ChatThread = ({ conversationId, initialMessages }: ChatThreadProps) => {
+const ChatThread = ({
+	conversationId,
+	messages,
+	generationStatus,
+	generationError,
+}: ChatThreadProps) => {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
 	const [input, setInput] = useState("");
-	const transport = useMemo(
-		() =>
-			new DefaultChatTransport({
-				api: "/api/chat",
-				body: { conversationId },
-			}),
-		[conversationId],
-	);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const revalidateChat = useCallback(() => {
 		void queryClient.invalidateQueries({
@@ -39,27 +38,7 @@ const ChatThread = ({ conversationId, initialMessages }: ChatThreadProps) => {
 		});
 	}, [conversationId, queryClient, trpc]);
 
-	const { messages, sendMessage, status, error } = useChat({
-		id: conversationId,
-		messages: initialMessages,
-		transport,
-		onFinish: () => {
-			revalidateChat();
-		},
-		onError: (err) => {
-			const isNetwork =
-				err instanceof TypeError &&
-				(err.message.toLowerCase().includes("fetch") ||
-					err.message.toLowerCase().includes("network"));
-			toast.error(
-				isNetwork
-					? "Se cortó la conexión al cerrar el stream. Si ves la respuesta, ya está generada."
-					: err.message || "Error al enviar el mensaje",
-			);
-		},
-	});
-
-	const isBusy = status === "submitted" || status === "streaming";
+	const isBusy = generationStatus === "running" || isSubmitting;
 	const lastAssistantId = [...messages]
 		.reverse()
 		.find((message) => message.role === "assistant")?.id;
@@ -75,24 +54,51 @@ const ChatThread = ({ conversationId, initialMessages }: ChatThreadProps) => {
 			),
 	);
 	const bottomRef = useRef<HTMLDivElement>(null);
-	const previousStatusRef = useRef(status);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: scroll as new parts arrive
 	useEffect(() => {
-		if (status === "submitted" || status === "streaming") {
+		if (isBusy) {
 			bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
 		}
-	}, [status, messages]);
+	}, [isBusy, messages]);
 
-	useEffect(() => {
-		const previous = previousStatusRef.current;
-		previousStatusRef.current = status;
-		const wasBusy = previous === "submitted" || previous === "streaming";
-		const isSettled = status === "ready" || status === "error";
-		if (wasBusy && isSettled) {
-			revalidateChat();
+	const send = async (text: string) => {
+		if (!text || isBusy) {
+			return;
 		}
-	}, [revalidateChat, status]);
+		setIsSubmitting(true);
+		const userMessage: UIMessage = {
+			id: crypto.randomUUID(),
+			role: "user",
+			parts: [{ type: "text", text }],
+		};
+		try {
+			const response = await fetch("/api/chat", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					conversationId,
+					messages: [...messages, userMessage],
+				}),
+			});
+			if (response.status === 409) {
+				toast.error("Esta conversación ya está generando una respuesta.");
+				revalidateChat();
+				return;
+			}
+			if (!response.ok) {
+				const errorText = await response.text();
+				throw new Error(errorText || "Error al enviar el mensaje");
+			}
+			revalidateChat();
+		} catch (err) {
+			toast.error(
+				err instanceof Error ? err.message : "Error al enviar el mensaje",
+			);
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
 
 	const onSubmit = (event: React.FormEvent) => {
 		event.preventDefault();
@@ -101,7 +107,7 @@ const ChatThread = ({ conversationId, initialMessages }: ChatThreadProps) => {
 			return;
 		}
 		setInput("");
-		void sendMessage({ text });
+		void send(text);
 	};
 
 	return (
@@ -137,18 +143,13 @@ const ChatThread = ({ conversationId, initialMessages }: ChatThreadProps) => {
 							/>
 						</div>
 					))}
-					{status === "submitted" ? (
+					{generationStatus === "running" && !hasAssistantReply ? (
 						<p className="text-sm text-muted-foreground">
 							Preparando respuesta…
 						</p>
 					) : null}
-					{error && status === "error" && !hasAssistantReply ? (
-						<p className="text-sm text-destructive">
-							{error.message.toLowerCase().includes("network") ||
-							error.message.toLowerCase().includes("fetch")
-								? "No se pudo confirmar el cierre del stream. Revisa si la respuesta ya apareció arriba."
-								: error.message}
-						</p>
+					{generationStatus === "error" && generationError ? (
+						<p className="text-sm text-destructive">{generationError}</p>
 					) : null}
 					<div ref={bottomRef} />
 				</div>
@@ -167,7 +168,7 @@ const ChatThread = ({ conversationId, initialMessages }: ChatThreadProps) => {
 								return;
 							}
 							setInput("");
-							void sendMessage({ text });
+							void send(text);
 						}
 					}}
 				/>

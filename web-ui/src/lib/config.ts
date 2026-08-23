@@ -31,6 +31,10 @@ const envSchema = z.object({
 	AWS_REGION: z.string().optional().default("us-east-1"),
 	AWS_S3_BUCKET: z.string().optional(),
 
+	INNGEST_DEV: z.string().optional(),
+	INNGEST_EVENT_KEY: z.string().optional(),
+	INNGEST_SIGNING_KEY: z.string().optional(),
+
 	DEEPSEEK_API_KEY: z.string().optional(),
 	DEEPSEEK_MODEL: z.string().optional().default("deepseek-v4-pro"),
 	MCP_SERVER_URL: z.string().optional().default("http://localhost:3333/mcp"),
@@ -71,6 +75,12 @@ const config = {
 		secretAccessKey: parsedEnv.AWS_SECRET_ACCESS_KEY,
 		region: parsedEnv.AWS_REGION || "us-east-1",
 		bucketName: parsedEnv.AWS_S3_BUCKET,
+	},
+
+	inngest: {
+		dev: parsedEnv.INNGEST_DEV,
+		eventKey: parsedEnv.INNGEST_EVENT_KEY,
+		signingKey: parsedEnv.INNGEST_SIGNING_KEY,
 	},
 
 	deepseekApiKey: parsedEnv.DEEPSEEK_API_KEY,

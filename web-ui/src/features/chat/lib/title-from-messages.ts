@@ -1,6 +1,6 @@
 import type { UIMessage } from "ai";
 
-const MAX_TITLE_LENGTH = 48;
+const MAX_TITLE_LENGTH = 43;
 
 const shortenTitle = (text: string): string => {
 	const firstLine = text.split(/\r?\n/, 1)[0] ?? text;
@@ -11,7 +11,7 @@ const shortenTitle = (text: string): string => {
 
 	const slice = normalized.slice(0, MAX_TITLE_LENGTH);
 	const lastSpace = slice.lastIndexOf(" ");
-	const cut = lastSpace >= 24 ? slice.slice(0, lastSpace) : slice;
+	const cut = lastSpace >= 19 ? slice.slice(0, lastSpace) : slice;
 	return `${cut.trimEnd()}…`;
 };
 

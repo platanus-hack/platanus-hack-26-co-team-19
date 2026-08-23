@@ -1,47 +1,11 @@
-import { createDeepSeek } from "@ai-sdk/deepseek";
-import { createMCPClient } from "@ai-sdk/mcp";
-import {
-	convertToModelMessages,
-	generateId,
-	stepCountIs,
-	streamText,
-	type UIMessage,
-} from "ai";
+import type { UIMessage } from "ai";
 import { headers } from "next/headers";
-import { after } from "next/server";
 import { titleFromMessages } from "@/features/chat/lib/title-from-messages";
 import * as chatService from "@/features/chat/server/chat.service";
 import { auth } from "@/lib/auth";
-import config from "@/lib/config";
+import { inngest } from "@/lib/inngest/client";
 
-export const maxDuration = 120;
-
-const SYSTEM_PROMPT = `Eres un asistente jurídico sobre datos del Consejo de Estado (Colombia).
-Usa las tools MCP (search_perfiles, get_perfil, search_providencias, get_providencia y salvamentos) cuando haga falta.
-Responde en español. Saluda de forma breve; no enumeres capacidades ni uses emojis.
-
-Consultas de juez o ponente (nombre parcial, «el juez Carlos», etc.):
-- Identifica al ponente. Si hay varios candidatos, lístalos y pregunta, o usa el más cercano.
-- Busca sus providencias con search_providencias. No filtres por año a ciegas: si el dataset solo tiene un anio_fallo, usa esos resultados.
-- Responde por defecto con una tabla Markdown y SOLO estas columnas:
-  1. Tema del caso: campo temas. Si está vacío, infiere de pasivo, actor o resolutiva y márcalo como inferido.
-  2. Tipo: tipo_doc; indica tutela si es_tutela.
-  3. Fecha: fecha.
-  4. Decisión: verbo; si está vacío, infiere de la resolutiva o usa «—».
-  5. Sentido: sentido; si está vacío, «—».
-- Si no hay tema (ni en temas ni inferible), omite esa fila. No escribas «No registrado».
-- Si hay tema pero decisión o sentido no están definidos, incluye la fila con «—» en esas columnas.
-- Si tras filtrar no queda ninguna fila, di que no hay providencias con tema registrado. No añadas resumen.
-- Después de la tabla, muestra un resumen breve y legible calculado SOLO sobre las filas mostradas (no JSON ni get_perfil):
-  - Total de providencias.
-  - Por tipo: recuento y porcentaje (sentencia, auto; tutela si aplica).
-  - Por decisión (verbo): recuento y porcentaje; las «—» como «sin decisión», aparte de los verbos definidos.
-  - Por sentido: porcentaje favorable, desfavorable y sin sentido. Usa frases claras (p. ej. «10 de 12 con sentido desfavorable (83 %)»).
-  - Rango de fechas: mínima y máxima de fecha.
-- No incluyas radicado, duración ni JSON crudo salvo que el usuario lo pida.
-- Si resolutiva está truncada y necesitas tema o decisión, llama a get_providencia.
-
-Otras consultas (radicado concreto, texto completo, salvamentos, métricas): responde con el formato que corresponda; no fuerces esa tabla.`;
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
 	const session = await auth.api.getSession({
@@ -49,9 +13,6 @@ export async function POST(request: Request) {
 	});
 	if (!session) {
 		return new Response("Unauthorized", { status: 401 });
-	}
-	if (!config.deepseekApiKey) {
-		return new Response("DEEPSEEK_API_KEY no configurada", { status: 500 });
 	}
 
 	const body = (await request.json()) as {
@@ -66,7 +27,10 @@ export async function POST(request: Request) {
 	}
 
 	const ownerId = session.user.id;
-	await chatService.get(ownerId, conversationId);
+	const conversation = await chatService.get(ownerId, conversationId);
+	if (conversation.generationStatus === "running") {
+		return Response.json({ alreadyRunning: true }, { status: 409 });
+	}
 
 	const persistMessages = async (nextMessages: UIMessage[], title?: string) => {
 		await chatService.upsertMessages(
@@ -81,92 +45,45 @@ export async function POST(request: Request) {
 		);
 	};
 
+	const assistantMessageId = crypto.randomUUID();
+	const assistantPlaceholder: UIMessage = {
+		id: assistantMessageId,
+		role: "assistant",
+		parts: [],
+	};
+
 	try {
-		await persistMessages(messages, titleFromMessages(messages));
+		await persistMessages(
+			[...messages, assistantPlaceholder],
+			titleFromMessages(messages),
+		);
+		await chatService.setGenerationStatus(ownerId, conversationId, "running");
 	} catch (persistError) {
 		console.error("Failed to persist incoming chat messages", persistError);
 		return new Response("No se pudieron guardar los mensajes", { status: 500 });
 	}
 
-	const mcpClient = await createMCPClient({
-		transport: {
-			type: "http",
-			url: config.mcpServerUrl,
-		},
-		protocolVersionDiscovery: false,
-	});
-
 	try {
-		const deepseek = createDeepSeek({ apiKey: config.deepseekApiKey });
-		const tools = await mcpClient.tools();
-		const result = streamText({
-			model: deepseek(config.deepseekModel),
-			system: SYSTEM_PROMPT,
-			messages: await convertToModelMessages(messages),
-			tools,
-			stopWhen: stepCountIs(8),
-			providerOptions: {
-				deepseek: {
-					thinking: { type: "enabled" },
-				},
+		await inngest.send({
+			name: "chat/generate.requested",
+			data: {
+				conversationId,
+				userId: ownerId,
+				assistantMessageId,
 			},
 		});
-
-		result.consumeStream();
-
-		let didPersistFinal = false;
-		let resolveOnFinish: (() => void) | undefined;
-		const onFinishGate = new Promise<void>((resolve) => {
-			resolveOnFinish = resolve;
-		});
-
-		after(async () => {
-			try {
-				await result.consumeStream();
-				await Promise.race([
-					onFinishGate,
-					new Promise<void>((resolve) => {
-						setTimeout(resolve, 2000);
-					}),
-				]);
-				if (didPersistFinal) {
-					return;
-				}
-				const text = await result.text;
-				const assistant: UIMessage = {
-					id: generateId(),
-					role: "assistant",
-					parts: [{ type: "text", text }],
-				};
-				await persistMessages(
-					[...messages, assistant],
-					titleFromMessages(messages),
-				);
-			} catch (persistError) {
-				console.error("Failed to persist chat messages (after)", persistError);
-			} finally {
-				await mcpClient.close().catch(() => undefined);
-			}
-		});
-
-		return result.toUIMessageStreamResponse({
-			sendReasoning: true,
-			originalMessages: messages,
-			onFinish: async ({ messages: nextMessages }) => {
-				try {
-					await persistMessages(nextMessages, titleFromMessages(nextMessages));
-					didPersistFinal = true;
-				} catch (persistError) {
-					console.error("Failed to persist chat messages", persistError);
-				} finally {
-					resolveOnFinish?.();
-				}
-			},
-		});
-	} catch (error) {
-		await mcpClient.close().catch(() => undefined);
-		const message =
-			error instanceof Error ? error.message : "Error al generar respuesta";
-		return new Response(message, { status: 500 });
+	} catch (sendError) {
+		console.error("Failed to enqueue chat generation", sendError);
+		await chatService
+			.setGenerationStatus(
+				ownerId,
+				conversationId,
+				"error",
+				"No se pudo encolar la generación",
+			)
+			.catch(() => undefined);
+		return new Response("No se pudo iniciar la generación", { status: 500 });
 	}
+
+	return Response.json({ ok: true, assistantMessageId }, { status: 202 });
 }

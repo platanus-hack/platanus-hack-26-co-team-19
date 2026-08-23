@@ -2,24 +2,64 @@
 
 **Track:** Access · **Equipo:** team-19 (Bogotá)
 
-deley.com es una aplicación que muestra **métricas de abogados** a partir del historial de casos que han realizado. El track Access cubre quién entra al panel y quién puede ver esos datos de desempeño.
+**Que nadie enfrente a su juez sin conocerlo primero.**
 
 ## Problema
 
-Evaluar o comparar abogados suele basarse en reputación informal. El historial de casos existe, pero no se traduce en métricas claras ni comparables.
+Poca accesibilidad a información de jueces y data desordenada. El historial público existe, pero no se consulta como un perfil claro.
 
 ## Solución
 
-Un panel que deriva indicadores del historial de casos (volumen, resultados, tiempos, etc. según los datos disponibles) y los muestra por abogado.
+Convertimos las sentencias públicas de un juez en un perfil consultable: sabemos qué tipo de casos ven los jueces y qué argumentos siguen. Directorio, fichas y chat con tools MCP sobre providencias del Consejo de Estado.
 
-El login y el dashboard de la plantilla son el **acceso** al producto: cuentas, sesión y rutas protegidas. El producto es la métrica, no el auth.
+## Impacto
+
+Conseguimos la síntesis de esa información en segundos.
 
 ## Para quién
 
-Estudios jurídicos, coordinadores de equipo y perfiles internos que necesitan ver desempeño con datos de casos, no con anécdotas.
+Quien va a enfrentar a un juez (o asesora a alguien que lo hace) y necesita conocer primero lo observable en providencias públicas: temas, sentidos, votos. No es ranking oficial ni tasa de éxito.
 
 ## Stack
 
-Next.js (App Router), Better Auth, Prisma + PostgreSQL, tRPC, Shadcn UI.
+Next.js (App Router), Better Auth, Prisma + PostgreSQL, tRPC, MCP, Inngest, DeepSeek, Bun, Caddy, Shadcn UI.
 
-El deploy público se publica en `deploy-url` de `platanus-hack-project.jsonc` cuando esté en Vercel (vía repo personal; el org de Platanus no admite integraciones de deploy).
+Detalle de piezas: [ARCHITECTURE.md](ARCHITECTURE.md). Deploy: `deploy-url` en [`platanus-hack-project.jsonc`](platanus-hack-project.jsonc).
+
+## Arquitectura
+
+```mermaid
+flowchart LR
+  subgraph ingest [Ingesta]
+    Scraping[SAMAI scraping]
+    OCR[OCR PDFs]
+    Judge[perfiles juez]
+  end
+  subgraph data [Postgres]
+    Corte[corte]
+    Public[public]
+  end
+  subgraph runtime [VPS]
+    Caddy[Caddy]
+    Next[Next.js]
+    Mcp[MCP]
+    Ing[Inngest]
+  end
+  User[Usuario]
+  DS[DeepSeek]
+  S3[S3]
+  Scraping --> Corte
+  OCR --> Corte
+  Judge --> Corte
+  User --> Caddy
+  Caddy --> Next
+  Caddy --> Mcp
+  Next --> Public
+  Next --> Corte
+  Next --> Ing
+  Ing --> Next
+  Next --> DS
+  Next --> Mcp
+  Mcp --> Corte
+  Next --> S3
+```

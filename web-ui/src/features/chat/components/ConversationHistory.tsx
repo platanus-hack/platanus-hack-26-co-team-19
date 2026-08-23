@@ -13,6 +13,7 @@ type ConversationHistoryProps = {
 	onCreate: () => void;
 	onDelete: (id: string) => void;
 	isCreating: boolean;
+	errorMessage?: string | null;
 	className?: string;
 };
 
@@ -23,6 +24,7 @@ const ConversationHistory = ({
 	onCreate,
 	onDelete,
 	isCreating,
+	errorMessage,
 	className,
 }: ConversationHistoryProps) => {
 	return (
@@ -41,7 +43,9 @@ const ConversationHistory = ({
 			</div>
 			<ScrollArea className="min-h-0 flex-1">
 				<div className="flex flex-col gap-1 p-2">
-					{conversations.length === 0 ? (
+					{errorMessage ? (
+						<p className="px-2 text-xs text-destructive">{errorMessage}</p>
+					) : conversations.length === 0 ? (
 						<p className="px-2 text-xs text-muted-foreground">
 							Aún no hay conversaciones.
 						</p>
