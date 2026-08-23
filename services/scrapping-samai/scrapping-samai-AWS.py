@@ -18,13 +18,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # CONFIG
-PG = dict(host=os.getenv("PGHOST", "localhost"),
-          port=os.getenv("PGPORT", "5432"),
-          dbname=os.getenv("PGDATABASE"),
-          user=os.getenv("PGUSER", "postgres"),
-          password=os.getenv("PGPASSWORD", ""),
-          options="-c search_path=corte,public")
-
+PG = dict(
+    host=os.getenv("PGHOST"),
+    port=os.getenv("PGPORT"),
+    dbname=os.getenv("PGDATABASE"),
+    user=os.getenv("PGUSER"),
+    password=os.getenv("PGPASSWORD"),
+    options="-c search_path=corte,public"
+)
 BUCKET = os.getenv("S3_BUCKET", "")
 PREFIX = os.getenv("S3_PREFIX", "pdfs/")
 REGION = os.getenv("AWS_REGION", "us-east-1")
