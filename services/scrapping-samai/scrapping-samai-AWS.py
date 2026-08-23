@@ -25,13 +25,14 @@ _SCRIPT_DIR = Path(__file__).resolve().parent
 load_dotenv(_SCRIPT_DIR / ".env")
 
 # CONFIG
-PG = dict(host=os.getenv("PGHOST", "localhost"),
-          port=os.getenv("PGPORT", "5432"),
-          dbname=os.getenv("PGDATABASE"),
-          user=os.getenv("PGUSER", "postgres"),
-          password=os.getenv("PGPASSWORD", ""),
-          options="-c search_path=corte,public")
-
+PG = dict(
+    host=os.getenv("PGHOST"),
+    port=os.getenv("PGPORT"),
+    dbname=os.getenv("PGDATABASE"),
+    user=os.getenv("PGUSER"),
+    password=os.getenv("PGPASSWORD"),
+    options="-c search_path=corte,public"
+)
 BUCKET = os.getenv("S3_BUCKET", "")
 PREFIX = os.getenv("S3_PREFIX", "pdfs/")
 REGION = os.getenv("AWS_REGION", "us-east-1")
@@ -340,8 +341,12 @@ VALUES (%(id)s,%(certificado)s,%(radicado)s,%(interno)s,%(pagina)s,%(orden)s,
   %(tipo_doc)s,%(clase_proceso)s,%(es_tutela)s,%(ponente)s,%(sala)s,%(seccion)s,
   %(subseccion)s,%(actor)s,%(demandado)s,%(fecha_proceso)s,%(fecha_providencia)s,
   %(anio_radicado)s,%(anio_fallo)s,%(duracion_anios)s,%(tipo)s,%(actuacion)s,
-  %(sentido)s,%(s3_key)s,%(status)s);
+  %(sentido)s,%(s3_key)s,%(status)s)
+ON CONFLICT (id) DO UPDATE SET
+  s3_key = COALESCE(EXCLUDED.s3_key, providencias.s3_key),
+  status = COALESCE(EXCLUDED.status, providencias.status);
 """
+
 SQL_PROB = ("INSERT INTO problemas (id, certificado, radicado, problema, respuesta,"
             " justificacion, fuente_formal, status) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)")
 SQL_DESC = ("INSERT INTO descriptores (id, certificado, radicado, descriptor)"
@@ -594,6 +599,9 @@ def run(paginas=10, desde=1):
                     prov["s3_key"] = path
 
             with con, con.cursor() as cur:
+                ids = [x["id"] for x in provs]
+                for tabla in ("problemas", "descriptores", "firmantes", "votos"):
+                    cur.execute(f"DELETE FROM {tabla} WHERE id = ANY(%s)", (ids,))
                 psycopg2.extras.execute_batch(cur, SQL_PROV, provs)
                 psycopg2.extras.execute_batch(cur, SQL_PROB, probs)
                 psycopg2.extras.execute_batch(cur, SQL_DESC, descs)
@@ -625,27 +633,7 @@ def run(paginas=10, desde=1):
               f"{tot['voto']} votos | {tot['pdf']} PDFs")
     return tot
 
-def perfil(q):
-    con = psycopg2.connect(**PG)
-    with con.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-        cur.execute("SELECT * FROM perfiles WHERE ponente ILIKE %s ORDER BY total DESC",
-                    (f"%{q}%",))
-        filas = cur.fetchall()
-        if not filas:
-            print("sin resultados")
-        for r in filas:
-
-            for k, v in r.items():
-                if k not in ("ponente", "seccion", "subseccion"):
-                    print(f"  {k:<24}{v}")
-    con.close()
-
-
 if __name__ == "__main__":
-    a = sys.argv[1] if len(sys.argv) > 1 else "10"
-    if a == "perfil":
-        perfil(sys.argv[2] if len(sys.argv) > 2 else "")
-    else:
-        run(int(a), int(sys.argv[2]) if len(sys.argv) > 2 else 1)
-
-
+    paginas = int(sys.argv[1]) if len(sys.argv) > 1 else 10
+    desde = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+    run(paginas, desde)
