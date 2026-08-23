@@ -298,7 +298,6 @@ def procesa_zip(ruta_zip, store, por_orden):
     recorre(ruta_zip)
     return guardados
 
-
 #  SQL
 SQL_PROV = """
 INSERT INTO providencias (id, certificado, radicado, interno, pagina, orden,
@@ -357,7 +356,7 @@ def run(paginas=10, desde=1):
         for p in range(desde, desde + paginas):
             provs, probs, descs, firms, votos = extraer(d.page_source, p)
             if not provs:
-                print(f"pag {p}: sin resultados, corto")
+
                 break
             por_orden = {x["orden"]: x for x in provs}
 
