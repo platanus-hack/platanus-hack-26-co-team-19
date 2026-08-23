@@ -1,0 +1,28 @@
+{
+	auto_https disable_redirects
+	email luizarnoldch@gmail.com
+	cert_issuer acme {
+		dir https://acme-v02.api.letsencrypt.org/directory
+		profile shortlived
+	}
+}
+
+(mcp_and_app) {
+	handle /mcp* {
+		reverse_proxy 127.0.0.1:3333 {
+			flush_interval -1
+		}
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:3000
+	}
+}
+
+http://206.189.200.33 {
+	import mcp_and_app
+}
+
+https://206.189.200.33 {
+	import mcp_and_app
+}

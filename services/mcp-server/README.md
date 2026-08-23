@@ -13,9 +13,27 @@ bun run dev
 ```
 
 - Salud (solo local): `GET http://localhost:3333/health` (`backend` es `postgres` o `csv`)
-- MCP vía nginx (puerto 80): `http://<ip-publica>/mcp`
+- Público vía Caddy: HTTP `http://<ip-publica>/mcp` y HTTPS `https://<ip-publica>/mcp` (Let’s Encrypt, perfil `shortlived` ~6 días)
 
-Nginx hace proxy de `/mcp` a Bun en `127.0.0.1:3333`. Fragmento: [`nginx.mcp.conf`](nginx.mcp.conf). Recarga: `sudo nginx -t && sudo systemctl reload nginx`.
+Caddy hace proxy de `/mcp*` a Bun en `127.0.0.1:3333` y del resto a Next.js en `127.0.0.1:3000`. Config: [`Caddyfile`](Caddyfile).
+
+### Reverse proxy (Caddy)
+
+Sustituye nginx. HTTP y HTTPS se sirven **sin** redirect 301/308 (un POST MCP Streamable HTTP se rompe si redirige).
+
+HTTPS en la IP usa ACME Let’s Encrypt (`cert_issuer acme` + `profile shortlived`). El certificado es de CA pública, SAN = IP, vigencia ~160 horas; Caddy lo renueva solo. No hace falta `curl -k`.
+
+```bash
+# Debian/Ubuntu: paquete oficial de Caddy, luego:
+sudo systemctl stop nginx
+sudo systemctl disable nginx
+sudo cp Caddyfile /etc/caddy/Caddyfile
+sudo caddy validate --config /etc/caddy/Caddyfile
+sudo systemctl enable --now caddy
+# Abrir 80 y 443 en el firewall
+```
+
+Recarga tras editar: `sudo systemctl reload caddy`.
 
 ### Backend
 
@@ -26,7 +44,9 @@ Nginx hace proxy de `/mcp` a Bun en `127.0.0.1:3333`. Fragmento: [`nginx.mcp.con
 
 ### Consumo
 
-URL Streamable HTTP: `http://206.189.200.33/mcp`
+HTTPS (recomendado, cert público): `https://206.189.200.33/mcp`
+
+HTTP (sin redirect; clientes que no soporten IP en SAN): `http://206.189.200.33/mcp`
 
 En Cursor (`~/.cursor/mcp.json` o ajustes MCP):
 
@@ -34,7 +54,7 @@ En Cursor (`~/.cursor/mcp.json` o ajustes MCP):
 {
   "mcpServers": {
     "consejo-estado": {
-      "url": "http://206.189.200.33/mcp"
+      "url": "https://206.189.200.33/mcp"
     }
   }
 }
@@ -42,13 +62,29 @@ En Cursor (`~/.cursor/mcp.json` o ajustes MCP):
 
 El endpoint es público: no requiere token.
 
-Prueba rápida:
+Prueba HTTP (no debe devolver 301/308):
 
 ```bash
-curl -s -X POST http://206.189.200.33/mcp \
+curl -sS -D - -X POST http://206.189.200.33/mcp \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+```
+
+Prueba HTTPS (sin `-k`):
+
+```bash
+curl -sS -D - -X POST https://206.189.200.33/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+```
+
+Comprobar emisor:
+
+```bash
+echo | openssl s_client -connect 206.189.200.33:443 -servername 206.189.200.33 2>/dev/null \
+  | openssl x509 -noout -issuer -dates -ext subjectAltName
 ```
 
 ## Tools

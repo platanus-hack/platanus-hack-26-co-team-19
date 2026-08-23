@@ -1,0 +1,17 @@
+[Unit]
+Description=Consejo de Estado MCP HTTP server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/platanus-hack-26-co-team-19/services/mcp-server
+EnvironmentFile=/home/platanus-hack-26-co-team-19/services/mcp-server/.env
+Environment=PATH=/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+ExecStart=/root/.bun/bin/bun src/index.ts
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target

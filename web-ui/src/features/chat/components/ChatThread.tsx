@@ -3,7 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -30,18 +30,21 @@ const ChatThread = ({ conversationId, initialMessages }: ChatThreadProps) => {
 		[conversationId],
 	);
 
+	const revalidateChat = useCallback(() => {
+		void queryClient.invalidateQueries({
+			queryKey: trpc.chat.list.queryKey(),
+		});
+		void queryClient.invalidateQueries({
+			queryKey: trpc.chat.get.queryKey({ id: conversationId }),
+		});
+	}, [conversationId, queryClient, trpc]);
+
 	const { messages, sendMessage, status, error } = useChat({
 		id: conversationId,
 		messages: initialMessages,
 		transport,
-		onFinish: ({ isError, isDisconnect, isAbort }) => {
-			if (isError || isDisconnect || isAbort) {
-				return;
-			}
-			void queryClient.invalidateQueries(trpc.chat.list.queryOptions());
-			void queryClient.invalidateQueries(
-				trpc.chat.get.queryOptions({ id: conversationId }),
-			);
+		onFinish: () => {
+			revalidateChat();
 		},
 		onError: (err) => {
 			const isNetwork =
@@ -57,6 +60,9 @@ const ChatThread = ({ conversationId, initialMessages }: ChatThreadProps) => {
 	});
 
 	const isBusy = status === "submitted" || status === "streaming";
+	const lastAssistantId = [...messages]
+		.reverse()
+		.find((message) => message.role === "assistant")?.id;
 	const hasAssistantReply = messages.some(
 		(message) =>
 			message.role === "assistant" &&
@@ -69,7 +75,9 @@ const ChatThread = ({ conversationId, initialMessages }: ChatThreadProps) => {
 			),
 	);
 	const bottomRef = useRef<HTMLDivElement>(null);
+	const previousStatusRef = useRef(status);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: scroll as new parts arrive
 	useEffect(() => {
 		if (status === "submitted" || status === "streaming") {
 			bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -77,11 +85,14 @@ const ChatThread = ({ conversationId, initialMessages }: ChatThreadProps) => {
 	}, [status, messages]);
 
 	useEffect(() => {
-		if (status !== "submitted") {
-			return;
+		const previous = previousStatusRef.current;
+		previousStatusRef.current = status;
+		const wasBusy = previous === "submitted" || previous === "streaming";
+		const isSettled = status === "ready" || status === "error";
+		if (wasBusy && isSettled) {
+			revalidateChat();
 		}
-		void queryClient.invalidateQueries(trpc.chat.list.queryOptions());
-	}, [queryClient, status, trpc.chat.list]);
+	}, [revalidateChat, status]);
 
 	const onSubmit = (event: React.FormEvent) => {
 		event.preventDefault();
@@ -116,7 +127,14 @@ const ChatThread = ({ conversationId, initialMessages }: ChatThreadProps) => {
 							<p className="mb-1 text-[10px] uppercase tracking-wide opacity-70">
 								{message.role === "user" ? "Tú" : "Asistente"}
 							</p>
-							<ChatMessageParts message={message} />
+							<ChatMessageParts
+								message={message}
+								hideAssistantTextUntilComplete={
+									isBusy &&
+									message.role === "assistant" &&
+									message.id === lastAssistantId
+								}
+							/>
 						</div>
 					))}
 					{status === "submitted" ? (

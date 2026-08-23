@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 
 type UseGetConversationProps = {
@@ -12,11 +12,14 @@ const useGetConversation = ({ id }: UseGetConversationProps) => {
 	const query = useQuery({
 		...trpc.chat.get.queryOptions({ id: id ?? "" }),
 		enabled: Boolean(id),
+		placeholderData: keepPreviousData,
 	});
 
+	const conversation = query.data?.id === id ? query.data : undefined;
+
 	return {
-		conversation: query.data?.id === id ? query.data : undefined,
-		isLoading: Boolean(id) && query.data?.id !== id,
+		conversation,
+		isLoading: Boolean(id) && !conversation && query.isPending,
 		error: query.error,
 	};
 };

@@ -12,8 +12,10 @@ import {
 import { CopyCode } from "../components/CopyCode";
 import { MarketingNavbar } from "../components/MarketingNavbar";
 
-const MCP_URL =
-	process.env.NEXT_PUBLIC_MCP_SERVER_URL ?? "http://206.189.200.33/mcp";
+const MCP_HTTPS_URL =
+	process.env.NEXT_PUBLIC_MCP_SERVER_URL ?? "https://206.189.200.33/mcp";
+
+const MCP_URL = MCP_HTTPS_URL.replace(/^https:\/\//, "http://");
 
 const CONNECTOR_NAME = "deley.com";
 
@@ -83,8 +85,8 @@ function claudeInstallHref(url: string) {
 }
 
 export default function McpDocsView() {
-	const cursorJson = cursorConfigJson(MCP_URL);
-	const desktopJson = claudeDesktopJson(MCP_URL);
+	const cursorJson = cursorConfigJson(MCP_HTTPS_URL);
+	const desktopJson = claudeDesktopJson(MCP_HTTPS_URL);
 
 	return (
 		<div className="flex min-h-svh flex-col">
@@ -105,14 +107,31 @@ export default function McpDocsView() {
 						<CardTitle>URL del servidor</CardTitle>
 						<CardDescription>
 							Transporte Streamable HTTP. El endpoint es público y no requiere
-							token.
+							token. HTTPS usa Let’s Encrypt (certificado público, vigencia ~6
+							días). HTTP sigue disponible sin redirección.
 						</CardDescription>
 					</CardHeader>
-					<CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-						<code className="block break-all rounded-md bg-muted px-3 py-2 text-sm">
-							{MCP_URL}
-						</code>
-						<CopyCode value={MCP_URL} label="Copiar URL" />
+					<CardContent className="flex flex-col gap-4">
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+							<div>
+								<p className="mb-1 text-xs text-muted-foreground">HTTP</p>
+								<code className="block break-all rounded-md bg-muted px-3 py-2 text-sm">
+									{MCP_URL}
+								</code>
+							</div>
+							<CopyCode value={MCP_URL} label="Copiar HTTP" />
+						</div>
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+							<div>
+								<p className="mb-1 text-xs text-muted-foreground">
+									HTTPS (Let’s Encrypt)
+								</p>
+								<code className="block break-all rounded-md bg-muted px-3 py-2 text-sm">
+									{MCP_HTTPS_URL}
+								</code>
+							</div>
+							<CopyCode value={MCP_HTTPS_URL} label="Copiar HTTPS" />
+						</div>
 					</CardContent>
 				</Card>
 
@@ -129,7 +148,7 @@ export default function McpDocsView() {
 					<div className="mt-4 flex flex-wrap gap-2">
 						<Button asChild>
 							<a
-								href={claudeInstallHref(MCP_URL)}
+								href={claudeInstallHref(MCP_HTTPS_URL)}
 								target="_blank"
 								rel="noreferrer"
 							>
@@ -144,14 +163,13 @@ export default function McpDocsView() {
 							</a>
 						</Button>
 						<Button asChild variant="outline">
-							<a href={cursorInstallHref(MCP_URL)}>Instalar en Cursor</a>
+							<a href={cursorInstallHref(MCP_HTTPS_URL)}>Instalar en Cursor</a>
 						</Button>
 					</div>
 					<p className="mt-3 text-sm text-muted-foreground">
-						Claude.ai y ChatGPT suelen exigir HTTPS. Si el diálogo rechaza esta
-						URL (HTTP), usa Cursor u otro cliente local, o un endpoint HTTPS
-						cuando esté disponible. ChatGPT custom connectors requieren plan de
-						pago y Developer Mode.
+						Usa la URL HTTPS en Claude.ai y ChatGPT (certificado público en la
+						IP). HTTP queda para clientes que no acepten IP en el SAN. ChatGPT
+						custom connectors requieren plan de pago y Developer Mode.
 					</p>
 				</section>
 
@@ -185,7 +203,8 @@ export default function McpDocsView() {
 							</li>
 							<li>
 								Create / Add custom connector. Nombre: {CONNECTOR_NAME}. URL:{" "}
-								<code className="text-foreground">{MCP_URL}</code>. Auth: None.
+								<code className="text-foreground">{MCP_HTTPS_URL}</code>. Auth:
+								None.
 							</li>
 							<li>
 								En un chat nuevo, añade el conector desde + y prueba un prompt

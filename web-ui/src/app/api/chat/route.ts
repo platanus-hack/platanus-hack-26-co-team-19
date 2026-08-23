@@ -2,6 +2,7 @@ import { createDeepSeek } from "@ai-sdk/deepseek";
 import { createMCPClient } from "@ai-sdk/mcp";
 import {
 	convertToModelMessages,
+	generateId,
 	stepCountIs,
 	streamText,
 	type UIMessage,
@@ -113,28 +114,53 @@ export async function POST(request: Request) {
 
 		result.consumeStream();
 
+		let didPersistFinal = false;
+		let resolveOnFinish: (() => void) | undefined;
+		const onFinishGate = new Promise<void>((resolve) => {
+			resolveOnFinish = resolve;
+		});
+
+		after(async () => {
+			try {
+				await result.consumeStream();
+				await Promise.race([
+					onFinishGate,
+					new Promise<void>((resolve) => {
+						setTimeout(resolve, 2000);
+					}),
+				]);
+				if (didPersistFinal) {
+					return;
+				}
+				const text = await result.text;
+				const assistant: UIMessage = {
+					id: generateId(),
+					role: "assistant",
+					parts: [{ type: "text", text }],
+				};
+				await persistMessages(
+					[...messages, assistant],
+					titleFromMessages(messages),
+				);
+			} catch (persistError) {
+				console.error("Failed to persist chat messages (after)", persistError);
+			} finally {
+				await mcpClient.close().catch(() => undefined);
+			}
+		});
+
 		return result.toUIMessageStreamResponse({
 			sendReasoning: true,
 			originalMessages: messages,
 			onFinish: async ({ messages: nextMessages }) => {
 				try {
-					await persistMessages(nextMessages);
+					await persistMessages(nextMessages, titleFromMessages(nextMessages));
+					didPersistFinal = true;
 				} catch (persistError) {
 					console.error("Failed to persist chat messages", persistError);
 				} finally {
-					await mcpClient.close().catch(() => undefined);
+					resolveOnFinish?.();
 				}
-
-				after(async () => {
-					try {
-						await persistMessages(nextMessages);
-					} catch (persistError) {
-						console.error(
-							"Failed to persist chat messages (after)",
-							persistError,
-						);
-					}
-				});
 			},
 		});
 	} catch (error) {

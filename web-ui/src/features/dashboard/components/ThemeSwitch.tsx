@@ -20,7 +20,7 @@ const ThemeSwitch = () => {
 	const isDark = resolvedTheme === "dark";
 
 	return (
-		<label className="flex items-center gap-2 px-4">
+		<div className="flex items-center gap-2 px-4">
 			<Sun className="size-3.5 text-accent" />
 			<span className="text-[10px] tracking-[0.2em] uppercase">
 				{isDark ? "Oscuro" : "Claro"}
@@ -31,7 +31,7 @@ const ThemeSwitch = () => {
 				aria-label="Cambiar tema"
 			/>
 			<Moon className="size-3.5 text-accent" />
-		</label>
+		</div>
 	);
 };
 

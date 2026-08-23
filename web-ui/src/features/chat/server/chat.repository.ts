@@ -75,8 +75,65 @@ export const updateTitle = async (
 	return row;
 };
 
-const toJsonParts = (parts: unknown): Prisma.InputJsonValue =>
-	JSON.parse(JSON.stringify(parts ?? [])) as Prisma.InputJsonValue;
+const MAX_JSON_CHARS = 400_000;
+
+const compactParts = (parts: unknown): unknown => {
+	if (!Array.isArray(parts)) {
+		return parts ?? [];
+	}
+	return parts.map((part) => {
+		if (!part || typeof part !== "object") {
+			return part;
+		}
+		const record = part as Record<string, unknown>;
+		if (typeof record.type === "string" && record.type === "text") {
+			return {
+				type: "text",
+				text: typeof record.text === "string" ? record.text : "",
+			};
+		}
+		if (
+			record.type === "dynamic-tool" ||
+			(typeof record.type === "string" && record.type.startsWith("tool-"))
+		) {
+			return {
+				type: record.type,
+				toolName: record.toolName,
+				toolCallId: record.toolCallId,
+				state: record.state,
+				input: record.input,
+				errorText: record.errorText,
+			};
+		}
+		if (record.type === "reasoning") {
+			return {
+				type: "reasoning",
+				text: typeof record.text === "string" ? record.text : "",
+			};
+		}
+		return part;
+	});
+};
+
+const toJsonParts = (parts: unknown): Prisma.InputJsonValue => {
+	const serialize = (value: unknown): Prisma.InputJsonValue | null => {
+		try {
+			const serialized = JSON.stringify(value ?? []);
+			if (serialized.length > MAX_JSON_CHARS) {
+				return null;
+			}
+			return JSON.parse(serialized) as Prisma.InputJsonValue;
+		} catch {
+			return null;
+		}
+	};
+
+	return (
+		serialize(parts) ??
+		serialize(compactParts(parts)) ??
+		([] as Prisma.InputJsonValue)
+	);
+};
 
 export const upsertMessages = async (
 	userId: string,
