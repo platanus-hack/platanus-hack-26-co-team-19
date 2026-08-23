@@ -26,6 +26,11 @@ const envSchema = z.object({
 	MINIO_REGION: z.string(),
 	MINIO_BUCKET_NAME: z.string(),
 
+	AWS_ACCESS_KEY_ID: z.string().optional(),
+	AWS_SECRET_ACCESS_KEY: z.string().optional(),
+	AWS_REGION: z.string().optional().default("us-east-1"),
+	AWS_S3_BUCKET: z.string().optional(),
+
 	DEEPSEEK_API_KEY: z.string().optional(),
 	DEEPSEEK_MODEL: z.string().optional().default("deepseek-v4-pro"),
 	MCP_SERVER_URL: z.string().optional().default("http://localhost:3333/mcp"),
@@ -59,6 +64,13 @@ const config = {
 		browserRedirectUrl: parsedEnv.MINIO_BROWSER_REDIRECT_URL,
 		region: parsedEnv.MINIO_REGION || "us-east-1",
 		bucketName: parsedEnv.MINIO_BUCKET_NAME,
+	},
+
+	aws: {
+		accessKeyId: parsedEnv.AWS_ACCESS_KEY_ID,
+		secretAccessKey: parsedEnv.AWS_SECRET_ACCESS_KEY,
+		region: parsedEnv.AWS_REGION || "us-east-1",
+		bucketName: parsedEnv.AWS_S3_BUCKET,
 	},
 
 	deepseekApiKey: parsedEnv.DEEPSEEK_API_KEY,

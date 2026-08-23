@@ -27,7 +27,7 @@ const ChatWorkspace = () => {
 		);
 	}
 
-	if (isLoading || !conversation) {
+	if (isLoading || !conversation || conversation.id !== selectedId) {
 		return (
 			<p className="p-4 text-sm text-muted-foreground">
 				Cargando conversación…

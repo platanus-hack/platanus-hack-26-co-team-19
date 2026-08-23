@@ -7,7 +7,7 @@ const baseUrl = config.nextPublicAppUrl.replace(/\/$/, "");
 export const site = {
 	name: siteCopy.brand,
 	url: baseUrl,
-	locale: "es_PE",
+	locale: "es_CO",
 	lang: "es",
 	defaultTitle: siteCopy.brand,
 	titleTemplate: `%s | ${siteCopy.brand}`,
@@ -15,12 +15,12 @@ export const site = {
 	defaultDescription: siteCopy.lead,
 	ogImage: "/opengraph-image",
 	keywords: [
-		"abogados Perú",
-		"fichas de abogados",
-		"casos judiciales observados",
-		"directorio jurídico",
+		"Consejo de Estado",
+		"jueces Colombia",
+		"magistrados ponentes",
+		"providencias",
 		"deley.com",
-		"métricas de litigio",
+		"métricas judiciales",
 	],
 } as const;
 
@@ -30,11 +30,11 @@ export const pageSeo = {
 		description: siteCopy.lead,
 		path: "/",
 	},
-	abogados: {
-		title: "Buscar abogados",
+	jueces: {
+		title: "Buscar jueces",
 		description:
-			"Directorio de fichas públicas con volumen, materias y resultados observables. Sin tasas de éxito ni rankings de colegio.",
-		path: "/abogados",
+			"Directorio de magistrados ponentes del Consejo de Estado con indicadores, providencias y votos observados. Sin tasas de éxito ni rankings oficiales.",
+		path: "/jueces",
 	},
 	about: {
 		title: "Acerca de deley.com",

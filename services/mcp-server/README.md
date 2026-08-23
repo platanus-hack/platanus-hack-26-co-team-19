@@ -1,20 +1,28 @@
-# MCP Consejo de Estado (CSV)
+# MCP Consejo de Estado
 
-Servidor MCP independiente (Bun + Streamable HTTP). Consulta los CSV locales; la capa de datos está pensada para sustituirse por PostgreSQL (`DATA_BACKEND=postgres`) sin cambiar las tools.
+Servidor MCP independiente (Bun + Streamable HTTP). Consulta PostgreSQL (`corte`) por defecto; los CSV locales siguen disponibles como fallback (`DATA_BACKEND=csv`).
 
 ## Arranque
 
 ```bash
 cd services/mcp-server
 cp .env.example .env
+# DATABASE_URL = mismo Postgres que web-ui
 bun install
 bun run dev
 ```
 
-- Salud (solo local): `GET http://localhost:3333/health`
+- Salud (solo local): `GET http://localhost:3333/health` (`backend` es `postgres` o `csv`)
 - MCP vía nginx (puerto 80): `http://<ip-publica>/mcp`
 
 Nginx hace proxy de `/mcp` a Bun en `127.0.0.1:3333`. Fragmento: [`nginx.mcp.conf`](nginx.mcp.conf). Recarga: `sudo nginx -t && sudo systemctl reload nginx`.
+
+### Backend
+
+| `DATA_BACKEND` | Origen |
+| --- | --- |
+| `postgres` | Esquema `corte` (`providencias`, `votos`, vista `perfiles`, descriptores/firmantes/problemas) |
+| `csv` | `perfiles.csv`, `providencias.csv`, `votos.csv` en `DATA_DIR` |
 
 ### Consumo
 

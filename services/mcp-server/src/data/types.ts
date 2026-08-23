@@ -81,10 +81,10 @@ export type DatasetInfo = {
 
 export interface DataRepository {
   backend: "csv" | "postgres";
-  searchProvidencias(query: SearchProvidenciasQuery): Providencia[];
-  getProvidencia(params: { radicado?: string; archivo?: string }): Providencia | null;
-  searchPerfiles(query: SearchPerfilesQuery): Perfil[];
-  getPerfil(ponente: string): Perfil | null;
-  searchVotos(query: SearchVotosQuery): Voto[];
-  getDatasetInfo(id: DatasetId): DatasetInfo;
+  searchProvidencias(query: SearchProvidenciasQuery): Promise<Providencia[]>;
+  getProvidencia(params: { radicado?: string; archivo?: string }): Promise<Providencia | null>;
+  searchPerfiles(query: SearchPerfilesQuery): Promise<Perfil[]>;
+  getPerfil(ponente: string): Promise<Perfil | null>;
+  searchVotos(query: SearchVotosQuery): Promise<Voto[]>;
+  getDatasetInfo(id: DatasetId): Promise<DatasetInfo>;
 }

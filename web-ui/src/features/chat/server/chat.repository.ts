@@ -75,7 +75,10 @@ export const updateTitle = async (
 	return row;
 };
 
-export const replaceMessages = async (
+const toJsonParts = (parts: unknown): Prisma.InputJsonValue =>
+	JSON.parse(JSON.stringify(parts ?? [])) as Prisma.InputJsonValue;
+
+export const upsertMessages = async (
 	userId: string,
 	id: string,
 	messages: Array<{ id: string; role: string; parts: unknown }>,
@@ -83,7 +86,7 @@ export const replaceMessages = async (
 ): Promise<void> => {
 	const existing = await db.chatConversation.findFirst({
 		where: { id, userId },
-		select: { id: true },
+		select: { id: true, title: true },
 	});
 	if (!existing) {
 		throw new Error("Conversation not found");
@@ -92,29 +95,53 @@ export const replaceMessages = async (
 	const uniqueMessages = [
 		...new Map(messages.map((message) => [message.id, message])).values(),
 	];
+	if (uniqueMessages.length === 0) {
+		return;
+	}
 
-	await db.$transaction([
-		db.chatMessage.deleteMany({ where: { conversationId: id } }),
-		db.chatMessage.createMany({
-			data: uniqueMessages.map((message, index) => ({
-				id: message.id,
-				conversationId: id,
-				role: message.role,
-				parts: JSON.parse(
-					JSON.stringify(message.parts ?? []),
-				) as Prisma.InputJsonValue,
-				createdAt: new Date(Date.now() + index),
-			})),
-		}),
-		db.chatConversation.update({
+	const stored = await db.chatMessage.findMany({
+		where: { conversationId: id },
+		select: { id: true },
+	});
+	const storedIds = new Set(stored.map((row) => row.id));
+	const createdAtBase = Date.now();
+
+	await db.$transaction(async (tx) => {
+		for (const [index, message] of uniqueMessages.entries()) {
+			const parts = toJsonParts(message.parts);
+			if (storedIds.has(message.id)) {
+				await tx.chatMessage.update({
+					where: { id: message.id },
+					data: { role: message.role, parts },
+				});
+				continue;
+			}
+			await tx.chatMessage.create({
+				data: {
+					id: message.id,
+					conversationId: id,
+					role: message.role,
+					parts,
+					createdAt: new Date(createdAtBase + index),
+				},
+			});
+			storedIds.add(message.id);
+		}
+
+		const shouldSetTitle =
+			Boolean(title) && existing.title === "Nueva conversación";
+
+		await tx.chatConversation.update({
 			where: { id },
 			data: {
-				...(title ? { title } : {}),
+				...(shouldSetTitle ? { title } : {}),
 				updatedAt: new Date(),
 			},
-		}),
-	]);
+		});
+	});
 };
+
+export const replaceMessages = upsertMessages;
 
 export const remove = async (userId: string, id: string): Promise<void> => {
 	const result = await db.chatConversation.deleteMany({

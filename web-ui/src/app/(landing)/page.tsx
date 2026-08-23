@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { listJueces } from "@/features/judge-profile/server/juez.repository";
 import { JsonLd } from "@/features/marketing/components/JsonLd";
 import {
 	createPageMetadata,
@@ -12,7 +13,10 @@ export const metadata: Metadata = createPageMetadata({
 	absoluteTitle: true,
 });
 
-export default function LandingPage() {
+export const dynamic = "force-dynamic";
+
+export default async function LandingPage() {
+	const jueces = await listJueces();
 	return (
 		<>
 			<JsonLd
@@ -30,13 +34,16 @@ export default function LandingPage() {
 							"@type": "WebSite",
 							name: site.name,
 							url: site.url,
-							inLanguage: "es-PE",
+							inLanguage: "es-CO",
 							description: site.defaultDescription,
 						},
 					],
 				}}
 			/>
-			<LandingView />
+			<LandingView
+				sampleJueces={jueces.slice(0, 3)}
+				judgeCount={jueces.length}
+			/>
 		</>
 	);
 }

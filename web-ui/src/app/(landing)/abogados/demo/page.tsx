@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
-export default function LawyerDemoRedirectPage() {
-	redirect("/abogados/lucia-mendoza-quispe");
+export default function AbogadosDemoRedirectPage() {
+	permanentRedirect("/jueces");
 }

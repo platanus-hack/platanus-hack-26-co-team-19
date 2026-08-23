@@ -1,0 +1,127 @@
+/// Scraping / MCP. DDL is owned by Postgres, not by Prisma migrations.
+/// Most corte tables have no PK/UNIQUE; Prisma Client cannot query @@ignore models.
+/// View `corte.perfiles` is not modeled: Prisma would emit CREATE TABLE and conflict with the view.
+
+/// The underlying table does not contain a valid unique identifier.
+model Descriptor {
+  id          String?
+  certificado String?
+  radicado    String?
+  descriptor  String?
+
+  @@ignore
+  @@map("descriptores")
+  @@schema("corte")
+}
+
+/// The underlying table does not contain a valid unique identifier.
+model Firmante {
+  id            String?
+  certificado   String?
+  radicado      String?
+  magistrado    String?
+  estado        String?
+  manifestacion String?
+
+  @@ignore
+  @@map("firmantes")
+  @@schema("corte")
+}
+
+/// This table contains check constraints not modeled by Prisma.
+model JuezPerfil {
+  ponente                  String   @id
+  sala                     String?
+  seccion                  String?
+  subseccion               String?
+  totalCasos               Int      @default(0) @map("total_casos")
+  tendencia                String?
+  favoreceA                String?  @map("favorece_a")
+  garantismo               Int?
+  rigurosidad              Int?
+  independencia            Int?
+  consistencia             Int?
+  profundidadJuridica      Int?     @map("profundidad_juridica")
+  tasaFavorableCiudadano   Int?     @map("tasa_favorable_ciudadano")
+  tasaFavorableEstado      Int?     @map("tasa_favorable_estado")
+  tasaMixto                Int?     @map("tasa_mixto")
+  tiposProcesoFrecuentes   String?  @map("tipos_proceso_frecuentes")
+  inclinadoA               String?  @map("inclinado_a")
+  aFavorDe                 String?  @map("a_favor_de")
+  patronArgumentacion      String?  @map("patron_argumentacion")
+  sesgoObservable          String?  @map("sesgo_observable")
+  resumen                  String?
+  creadoEn                 DateTime @default(now()) @map("creado_en") @db.Timestamptz(6)
+  actualizadoEn            DateTime @default(now()) @map("actualizado_en") @db.Timestamptz(6)
+
+  @@map("jueces_perfiles")
+  @@schema("corte")
+}
+
+/// The underlying table does not contain a valid unique identifier.
+model Problema {
+  id            String?
+  certificado   String?
+  radicado      String?
+  problema      String?
+  respuesta     String?
+  justificacion String?
+  fuenteFormal  String? @map("fuente_formal")
+  status        String?
+
+  @@ignore
+  @@map("problemas")
+  @@schema("corte")
+}
+
+/// The underlying table does not contain a valid unique identifier (`id` is not unique).
+model Providencia {
+  id                  String?
+  certificado         String?
+  radicado            String?
+  interno             String?
+  pagina              Int?
+  orden               Int?
+  tipoDoc             String?   @map("tipo_doc")
+  claseProceso        String?   @map("clase_proceso")
+  esTutela            Boolean?  @map("es_tutela")
+  ponente             String?
+  sala                String?
+  seccion             String?
+  subseccion          String?
+  actor               String?
+  demandado           String?
+  fechaProceso        DateTime? @map("fecha_proceso") @db.Date
+  fechaProvidencia    DateTime? @map("fecha_providencia") @db.Date
+  anioRadicado        Int?      @map("anio_radicado")
+  anioFallo           Int?      @map("anio_fallo")
+  duracionAnios       Int?      @map("duracion_anios")
+  tipo                String?
+  actuacion           String?
+  sentido             String?
+  s3Key               String?   @map("s3_key")
+  status              String?
+  scrapeadoEn         DateTime? @default(now()) @map("scrapeado_en") @db.Timestamptz(6)
+  favorecido          String?
+  argumentosClave     String?   @map("argumentos_clave")
+  citasJurisprudencia Int?      @map("citas_jurisprudencia")
+  tono                String?
+  observacion         String?
+
+  @@ignore
+  @@map("providencias")
+  @@schema("corte")
+}
+
+/// The underlying table does not contain a valid unique identifier.
+model Voto {
+  id          String?
+  certificado String?
+  radicado    String?
+  magistrado  String?
+  tipo        String?
+
+  @@ignore
+  @@map("votos")
+  @@schema("corte")
+}

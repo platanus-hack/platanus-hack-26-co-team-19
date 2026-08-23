@@ -32,13 +32,22 @@ From `web-ui/package.json` (pin to repo versions when upgrading):
 
 | Path | Role |
 | --- | --- |
-| `web-ui/prisma/schema.prisma` | `generator` + `datasource` only |
-| `web-ui/prisma/models/auth.prisma` | Better Auth models |
-| `web-ui/prisma/models/*.prisma` | Domain models (e.g. `marketing.prisma`) |
-| `web-ui/prisma/migrations/` | Migration history |
+| `web-ui/prisma/schema.prisma` | `generator` + `datasource` only (`schemas = ["public", "corte"]`) |
+| `web-ui/prisma/models/auth.prisma` | Better Auth models (`@@schema("public")`) |
+| `web-ui/prisma/models/chat.prisma` | Chat models (`@@schema("public")`) |
+| `web-ui/prisma/models/marketing.prisma` | Marketing models (`@@schema("public")`) |
+| `web-ui/prisma/models/corte.prisma` | Introspected Consejo de Estado tables (`@@schema("corte")`) |
+| `web-ui/prisma/migrations/` | Migration history **for `public` only** |
 | `web-ui/src/generated/prisma` | Generated client |
 
 Do **not** put `generator` or `datasource` in model files.
+
+Postgres has two schemas on the same `DATABASE_URL`:
+
+- **`public`**: app tables (Better Auth, chat, contact). Owned by Prisma migrations.
+- **`corte`**: scraping/MCP (`providencias`, `votos`, `descriptores`, `firmantes`, `problemas`, `jueces_perfiles`, view `perfiles`). DDL is owned by scraping/Postgres. Refresh models with `bunx prisma db pull` from `web-ui/` and re-split into `corte.prisma`. Do **not** `migrate dev` to create or drop `corte` tables. Most `corte` tables have no PK and are `@@ignore` (not queryable via Prisma Client). The `perfiles` view is not modeled so Prisma does not emit `CREATE TABLE`.
+
+After Better Auth CLI generate, re-add `@@schema("public")` on each auth model.
 
 ## Getting Started
 

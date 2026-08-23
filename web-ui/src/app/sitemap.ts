@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
-import { lawyers } from "@/features/lawyer-profile/data/lawyers";
+import { listJueces } from "@/features/judge-profile/server/juez.repository";
 import { pageSeo, site } from "@/features/marketing/data/site";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const lastModified = new Date();
+	const jueces = await listJueces();
 	const staticRoutes = [
 		{
 			path: pageSeo.home.path,
@@ -11,7 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 			changeFrequency: "weekly" as const,
 		},
 		{
-			path: pageSeo.abogados.path,
+			path: pageSeo.jueces.path,
 			priority: 0.9,
 			changeFrequency: "weekly" as const,
 		},
@@ -39,8 +40,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
 			changeFrequency: route.changeFrequency,
 			priority: route.priority,
 		})),
-		...lawyers.map((lawyer) => ({
-			url: `${site.url}/abogados/${lawyer.slug}`,
+		...jueces.map((juez) => ({
+			url: `${site.url}/jueces/${juez.slug}`,
 			lastModified,
 			changeFrequency: "weekly" as const,
 			priority: 0.7,

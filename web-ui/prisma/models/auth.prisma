@@ -1,23 +1,23 @@
 model User {
-  id            String    @id @default(uuid())
+  id            String             @id @default(uuid())
   name          String
-  email         String
-  emailVerified Boolean   @default(false)
+  email         String             @unique
+  emailVerified Boolean            @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
-  sessions      Session[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @default(now()) @updatedAt
   accounts      Account[]
   conversations ChatConversation[]
+  sessions      Session[]
 
-  @@unique([email])
   @@map("user")
+  @@schema("public")
 }
 
 model Session {
   id        String   @id @default(uuid())
   expiresAt DateTime
-  token     String
+  token     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
   ipAddress String?
@@ -25,18 +25,16 @@ model Session {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
   @@index([userId])
   @@map("session")
+  @@schema("public")
 }
 
 model Account {
   id                    String    @id @default(uuid())
-  issuer                String
   accountId             String
   providerId            String
   userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
@@ -46,10 +44,13 @@ model Account {
   password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @default(now()) @updatedAt
+  issuer                String    @default("local:credential")
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([issuer, accountId])
   @@index([userId])
   @@map("account")
+  @@schema("public")
 }
 
 model Verification {
@@ -62,4 +63,5 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+  @@schema("public")
 }

@@ -1,9 +1,3 @@
-enum ContactStatus {
-  NEW
-  READ
-  ARCHIVED
-}
-
 model Contact {
   id        String        @id @default(uuid())
   name      String
@@ -18,4 +12,13 @@ model Contact {
   @@index([status])
   @@index([createdAt])
   @@map("contact_submission")
+  @@schema("public")
+}
+
+enum ContactStatus {
+  NEW
+  READ
+  ARCHIVED
+
+  @@schema("public")
 }

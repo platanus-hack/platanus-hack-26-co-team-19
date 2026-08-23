@@ -76,6 +76,13 @@ const ChatThread = ({ conversationId, initialMessages }: ChatThreadProps) => {
 		}
 	}, [status, messages]);
 
+	useEffect(() => {
+		if (status !== "submitted") {
+			return;
+		}
+		void queryClient.invalidateQueries(trpc.chat.list.queryOptions());
+	}, [queryClient, status, trpc.chat.list]);
+
 	const onSubmit = (event: React.FormEvent) => {
 		event.preventDefault();
 		const text = input.trim();

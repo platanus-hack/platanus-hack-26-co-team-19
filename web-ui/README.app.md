@@ -65,12 +65,26 @@ This project uses a multi-file Prisma schema (`prisma.config.ts` sets `schema: "
 
 | Path | Role |
 | --- | --- |
-| `prisma/schema.prisma` | `generator` + `datasource` only |
+| `prisma/schema.prisma` | `generator` + `datasource` only (`schemas = ["public", "corte"]`) |
 | `prisma/models/auth.prisma` | Better Auth models (`User`, `Session`, `Account`, `Verification`) |
-| `prisma/models/*.prisma` | Domain models (e.g. `marketing.prisma`) |
+| `prisma/models/chat.prisma` | Chat conversations and messages |
+| `prisma/models/marketing.prisma` | Contact submissions |
+| `prisma/models/corte.prisma` | Introspected `corte` tables (scraping / MCP) |
 | `src/generated/prisma` | Generated client (import via `src/lib/prisma`) |
 
 Do **not** put `generator` or `datasource` blocks in model files. Keep them in `prisma/schema.prisma`.
+
+Existing models in `public` must include `@@schema("public")`. Re-add it after Better Auth CLI generate.
+
+### Schema `corte` (read-mostly)
+
+Same database as the app, different PostgreSQL schema. Tables are filled by scraping (`services/scrapping-samai`) and read by the MCP. Prisma **introspects** them; it does **not** own their DDL.
+
+- Refresh: `bunx prisma db pull`, then keep `corte` models in `prisma/models/corte.prisma` (do not let pull merge away Better Auth).
+- Do not run `prisma migrate dev` to create or drop `corte` tables.
+- Tables without a primary key are `@@ignore` (not available on Prisma Client). Query them with SQL (MCP `pg-repository`).
+- View `corte.perfiles` is not a Prisma model (a model would generate `CREATE TABLE` and clash with the view).
+- Check that schema matches the live DB: `bunx prisma migrate diff --from-config-datasource --to-schema prisma/ --script` (should be empty).
 
 ## Better Auth schema → `prisma/models/auth.prisma`
 

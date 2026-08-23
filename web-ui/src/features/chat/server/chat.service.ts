@@ -34,15 +34,17 @@ export const updateTitle = async (
 	return chatRepository.updateTitle(userId, id, title);
 };
 
-export const replaceMessages = async (
+export const upsertMessages = async (
 	userId: string,
 	id: string,
 	messages: Array<{ id: string; role: string; parts: unknown }>,
 	title?: string,
 ): Promise<void> => {
 	await get(userId, id);
-	await chatRepository.replaceMessages(userId, id, messages, title);
+	await chatRepository.upsertMessages(userId, id, messages, title);
 };
+
+export const replaceMessages = upsertMessages;
 
 export const remove = async (userId: string, id: string): Promise<void> => {
 	await get(userId, id);

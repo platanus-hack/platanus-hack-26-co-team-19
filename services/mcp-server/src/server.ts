@@ -62,7 +62,7 @@ export function createMcpServer(repo: DataRepository): McpServer {
     },
     async (args) => {
       const limit = clampLimit(args.limit);
-      const rows = repo.searchProvidencias({ ...args, limit }).map(summarizeProvidencia);
+      const rows = (await repo.searchProvidencias({ ...args, limit })).map(summarizeProvidencia);
       return json({ count: rows.length, limit, backend: repo.backend, rows });
     },
   );
@@ -78,7 +78,7 @@ export function createMcpServer(repo: DataRepository): McpServer {
       if (!args.radicado && !args.archivo) {
         return json({ error: "Indica radicado o archivo" });
       }
-      const row = repo.getProvidencia(args);
+      const row = await repo.getProvidencia(args);
       if (!row) {
         return json({ error: "Providencia no encontrada", ...args });
       }
@@ -96,7 +96,7 @@ export function createMcpServer(repo: DataRepository): McpServer {
     },
     async (args) => {
       const limit = clampLimit(args.limit);
-      const rows = repo.searchPerfiles({ ...args, limit });
+      const rows = await repo.searchPerfiles({ ...args, limit });
       return json({ count: rows.length, limit, backend: repo.backend, rows });
     },
   );
@@ -108,7 +108,7 @@ export function createMcpServer(repo: DataRepository): McpServer {
       ponente: z.string().min(1),
     },
     async (args) => {
-      const row = repo.getPerfil(args.ponente);
+      const row = await repo.getPerfil(args.ponente);
       if (!row) {
         return json({ error: "Perfil no encontrado", ponente: args.ponente });
       }
@@ -127,7 +127,7 @@ export function createMcpServer(repo: DataRepository): McpServer {
     },
     async (args) => {
       const limit = clampLimit(args.limit);
-      const rows = repo.searchVotos({ ...args, limit });
+      const rows = await repo.searchVotos({ ...args, limit });
       return json({ count: rows.length, limit, backend: repo.backend, rows });
     },
   );
@@ -147,7 +147,7 @@ export function createMcpServer(repo: DataRepository): McpServer {
     if (id !== "perfiles" && id !== "providencias" && id !== "votos") {
       throw new Error(`Dataset desconocido: ${id}`);
     }
-    const info = repo.getDatasetInfo(id);
+    const info = await repo.getDatasetInfo(id);
     return {
       contents: [
         {

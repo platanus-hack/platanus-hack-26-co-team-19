@@ -94,7 +94,7 @@ export class CsvRepository implements DataRepository {
     this.votos = loadCsv(dataDir, "votos.csv").map(mapVoto);
   }
 
-  searchProvidencias(query: SearchProvidenciasQuery): Providencia[] {
+  async searchProvidencias(query: SearchProvidenciasQuery): Promise<Providencia[]> {
     return this.providencias
       .filter((p) => {
         if (query.radicado && !includesNormalized(p.radicado, query.radicado)) return false;
@@ -117,7 +117,10 @@ export class CsvRepository implements DataRepository {
       .slice(0, query.limit);
   }
 
-  getProvidencia(params: { radicado?: string; archivo?: string }): Providencia | null {
+  async getProvidencia(params: {
+    radicado?: string;
+    archivo?: string;
+  }): Promise<Providencia | null> {
     const byArchivo = params.archivo
       ? this.providencias.find((p) => includesNormalized(p.archivo, params.archivo ?? ""))
       : undefined;
@@ -128,7 +131,7 @@ export class CsvRepository implements DataRepository {
     );
   }
 
-  searchPerfiles(query: SearchPerfilesQuery): Perfil[] {
+  async searchPerfiles(query: SearchPerfilesQuery): Promise<Perfil[]> {
     return this.perfiles
       .filter((p) => {
         if (query.ponente && !includesNormalized(p.ponente, query.ponente)) return false;
@@ -138,7 +141,7 @@ export class CsvRepository implements DataRepository {
       .slice(0, query.limit);
   }
 
-  getPerfil(ponente: string): Perfil | null {
+  async getPerfil(ponente: string): Promise<Perfil | null> {
     const needle = normalizeText(ponente);
     if (!needle) return null;
     const matches = this.perfiles.filter((p) => includesNormalized(p.ponente, ponente));
@@ -151,7 +154,7 @@ export class CsvRepository implements DataRepository {
     return matches[0] ?? null;
   }
 
-  searchVotos(query: SearchVotosQuery): Voto[] {
+  async searchVotos(query: SearchVotosQuery): Promise<Voto[]> {
     return this.votos
       .filter((v) => {
         if (query.radicado && !includesNormalized(v.radicado, query.radicado)) return false;
@@ -162,7 +165,7 @@ export class CsvRepository implements DataRepository {
       .slice(0, query.limit);
   }
 
-  getDatasetInfo(id: DatasetId): DatasetInfo {
+  async getDatasetInfo(id: DatasetId): Promise<DatasetInfo> {
     const map: Record<DatasetId, { rows: unknown[]; columns: string[] }> = {
       perfiles: {
         rows: this.perfiles,

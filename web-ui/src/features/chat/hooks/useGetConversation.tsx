@@ -12,12 +12,11 @@ const useGetConversation = ({ id }: UseGetConversationProps) => {
 	const query = useQuery({
 		...trpc.chat.get.queryOptions({ id: id ?? "" }),
 		enabled: Boolean(id),
-		placeholderData: (previousData) => previousData,
 	});
 
 	return {
-		conversation: query.data,
-		isLoading: query.isLoading,
+		conversation: query.data?.id === id ? query.data : undefined,
+		isLoading: Boolean(id) && query.data?.id !== id,
 		error: query.error,
 	};
 };

@@ -67,6 +67,26 @@ export async function POST(request: Request) {
 	const ownerId = session.user.id;
 	await chatService.get(ownerId, conversationId);
 
+	const persistMessages = async (nextMessages: UIMessage[], title?: string) => {
+		await chatService.upsertMessages(
+			ownerId,
+			conversationId,
+			nextMessages.map((message) => ({
+				id: message.id,
+				role: message.role,
+				parts: message.parts,
+			})),
+			title,
+		);
+	};
+
+	try {
+		await persistMessages(messages, titleFromMessages(messages));
+	} catch (persistError) {
+		console.error("Failed to persist incoming chat messages", persistError);
+		return new Response("No se pudieron guardar los mensajes", { status: 500 });
+	}
+
 	const mcpClient = await createMCPClient({
 		transport: {
 			type: "http",
@@ -96,24 +116,23 @@ export async function POST(request: Request) {
 		return result.toUIMessageStreamResponse({
 			sendReasoning: true,
 			originalMessages: messages,
-			onFinish: ({ messages: nextMessages }) => {
+			onFinish: async ({ messages: nextMessages }) => {
+				try {
+					await persistMessages(nextMessages);
+				} catch (persistError) {
+					console.error("Failed to persist chat messages", persistError);
+				} finally {
+					await mcpClient.close().catch(() => undefined);
+				}
+
 				after(async () => {
 					try {
-						const title = titleFromMessages(nextMessages);
-						await chatService.replaceMessages(
-							ownerId,
-							conversationId,
-							nextMessages.map((message) => ({
-								id: message.id,
-								role: message.role,
-								parts: message.parts,
-							})),
-							title,
-						);
+						await persistMessages(nextMessages);
 					} catch (persistError) {
-						console.error("Failed to persist chat messages", persistError);
-					} finally {
-						await mcpClient.close().catch(() => undefined);
+						console.error(
+							"Failed to persist chat messages (after)",
+							persistError,
+						);
 					}
 				});
 			},

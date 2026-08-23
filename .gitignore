@@ -51,3 +51,8 @@ yarn-error.log*
 next-env.d.ts
 
 web-ui/src/generated/prisma
+
+# scrapping-samai runtime
+services/scrapping-samai/batches.log
+services/scrapping-samai/lote_estado.txt
+services/scrapping-samai/_descargas/

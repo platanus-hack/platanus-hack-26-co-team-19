@@ -2,6 +2,7 @@ import { z } from "zod";
 import { authRouter } from "@/features/auth/server/auth.router";
 import { chatRouter } from "@/features/chat/server/chat.router";
 import { contactRouter } from "@/features/contact/server/contact.router";
+import { juezRouter } from "@/features/judge-profile/server/juez.router";
 import { userRouter } from "@/features/user/server/user.router";
 import { baseProcedure, createTRPCRouter } from "../init";
 
@@ -20,6 +21,7 @@ export const appRouter = createTRPCRouter({
 	auth: authRouter,
 	chat: chatRouter,
 	contact: contactRouter,
+	juez: juezRouter,
 	user: userRouter,
 });
 
